@@ -1,10 +1,22 @@
-import { EmbedBuilder } from 'discord.js';
-import type { PrefixCommand } from '../types/command.js';
+import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import type { PrefixCommand, SlashCommand } from '../types/command.js';
 import { getStore } from '../store/store.js';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 // v hunt - Săn quái 1 lần
+
+// /hunt - Slash command handler
+export const slashHunt: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('hunt')
+    .setDescription('hunt command'),
+  async execute(interaction) {
+    // TODO: Implement slash command logic
+    await interaction.reply({ content: 'Slash command hunt - Coming soon!', ephemeral: true });
+  }
+};
+
 export const prefixHunt: PrefixCommand = {
   name: 'hunt',
   description: 'Săn quái thần thoại (cooldown 2 phút)',

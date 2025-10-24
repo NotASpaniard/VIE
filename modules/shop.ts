@@ -1,10 +1,46 @@
-import { EmbedBuilder } from 'discord.js';
-import type { PrefixCommand } from '../types/command.js';
+import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import type { PrefixCommand, SlashCommand } from '../types/command.js';
 import { getStore } from '../store/store.js';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 // v shop - Xem tất cả shop categories
+
+// /shop - Slash command handler
+export const slashShop: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('shop')
+    .setDescription('shop command'),
+  async execute(interaction) {
+    // TODO: Implement slash command logic
+    await interaction.reply({ content: 'Slash command shop - Coming soon!', ephemeral: true });
+  }
+};
+
+
+// /buy - Slash command handler
+export const slashBuy: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('buy')
+    .setDescription('buy command'),
+  async execute(interaction) {
+    // TODO: Implement slash command logic
+    await interaction.reply({ content: 'Slash command buy - Coming soon!', ephemeral: true });
+  }
+};
+
+
+// /sell - Slash command handler
+export const slashSell: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('sell')
+    .setDescription('sell command'),
+  async execute(interaction) {
+    // TODO: Implement slash command logic
+    await interaction.reply({ content: 'Slash command sell - Coming soon!', ephemeral: true });
+  }
+};
+
 export const prefixShop: PrefixCommand = {
   name: 'shop',
   description: 'Xem tất cả cửa hàng',

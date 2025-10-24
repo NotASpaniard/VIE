@@ -1,10 +1,22 @@
-import { EmbedBuilder } from 'discord.js';
-import type { PrefixCommand } from '../types/command.js';
+import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import type { PrefixCommand, SlashCommand } from '../types/command.js';
 import { getStore } from '../store/store.js';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 // v hatch - Xem trạng thái trại ấp trứng
+
+// /hatch - Slash command handler
+export const slashHatch: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('hatch')
+    .setDescription('hatch command'),
+  async execute(interaction) {
+    // TODO: Implement slash command logic
+    await interaction.reply({ content: 'Slash command hatch - Coming soon!', ephemeral: true });
+  }
+};
+
 export const prefixHatch: PrefixCommand = {
   name: 'hatch',
   description: 'Xem trạng thái trại ấp trứng',

@@ -1,8 +1,44 @@
-import { EmbedBuilder } from 'discord.js';
-import type { PrefixCommand } from '../types/command.js';
+import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import type { PrefixCommand, SlashCommand } from '../types/command.js';
 import { getStore } from '../store/store.js';
 
 // ====== BLACKJACK GAME ======
+
+// /blackjack - Slash command handler
+export const slashBlackjack: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('blackjack')
+    .setDescription('blackjack command'),
+  async execute(interaction) {
+    // TODO: Implement slash command logic
+    await interaction.reply({ content: 'Slash command blackjack - Coming soon!', ephemeral: true });
+  }
+};
+
+
+// /baucua - Slash command handler
+export const slashBaucua: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('baucua')
+    .setDescription('baucua command'),
+  async execute(interaction) {
+    // TODO: Implement slash command logic
+    await interaction.reply({ content: 'Slash command baucua - Coming soon!', ephemeral: true });
+  }
+};
+
+
+// /xocdia - Slash command handler
+export const slashXocdia: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('xocdia')
+    .setDescription('xocdia command'),
+  async execute(interaction) {
+    // TODO: Implement slash command logic
+    await interaction.reply({ content: 'Slash command xocdia - Coming soon!', ephemeral: true });
+  }
+};
+
 export const prefixBlackjack: PrefixCommand = {
   name: 'blackjack',
   description: 'Chơi Blackjack: v blackjack <số tiền>',

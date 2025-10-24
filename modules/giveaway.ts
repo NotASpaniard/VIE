@@ -1,7 +1,19 @@
-import { EmbedBuilder, PermissionFlagsBits } from 'discord.js';
-import type { PrefixCommand } from '../types/command.js';
+import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
+import type { PrefixCommand, SlashCommand } from '../types/command.js';
 
 // Lệnh tạo giveaway
+
+// /giveaway - Slash command handler
+export const slashGiveaway: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('giveaway')
+    .setDescription('giveaway command'),
+  async execute(interaction) {
+    // TODO: Implement slash command logic
+    await interaction.reply({ content: 'Slash command giveaway - Coming soon!', ephemeral: true });
+  }
+};
+
 export const prefixGiveaway: PrefixCommand = {
   name: 'ga',
   description: 'Tạo giveaway mới (chỉ role Giveaway/Admin)',

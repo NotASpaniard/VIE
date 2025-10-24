@@ -1,10 +1,22 @@
-import { EmbedBuilder } from 'discord.js';
-import type { PrefixCommand } from '../types/command.js';
+import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import type { PrefixCommand, SlashCommand } from '../types/command.js';
 import { getStore } from '../store/store.js';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 // v dungeon - Xem trạng thái các ải
+
+// /dungeon - Slash command handler
+export const slashDungeon: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('dungeon')
+    .setDescription('dungeon command'),
+  async execute(interaction) {
+    // TODO: Implement slash command logic
+    await interaction.reply({ content: 'Slash command dungeon - Coming soon!', ephemeral: true });
+  }
+};
+
 export const prefixDungeon: PrefixCommand = {
   name: 'dungeon',
   description: 'Xem trạng thái các ải',

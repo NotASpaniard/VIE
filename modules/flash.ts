@@ -1,7 +1,19 @@
-import { EmbedBuilder, PermissionFlagsBits, ChannelType } from 'discord.js';
-import type { PrefixCommand } from '../types/command.js';
+import { EmbedBuilder, PermissionFlagsBits, ChannelType, SlashCommandBuilder } from 'discord.js';
+import type { PrefixCommand, SlashCommand } from '../types/command.js';
 
 // Lệnh đổi tên kênh nhanh
+
+// /flash - Slash command handler
+export const slashFlash: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('flash')
+    .setDescription('flash command'),
+  async execute(interaction) {
+    // TODO: Implement slash command logic
+    await interaction.reply({ content: 'Slash command flash - Coming soon!', ephemeral: true });
+  }
+};
+
 export const prefixRenameChannel: PrefixCommand = {
   name: 'rn',
   description: 'Đổi tên kênh một cách nhanh chóng (chỉ Admin)',

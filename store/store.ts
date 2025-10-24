@@ -5,6 +5,8 @@ type UserProfile = {
   userId: string;
   balance: number;
   daily: { last: number | null; streak: number };
+  lastDaily: string;
+  dailyStreak: number;
   inventory: Record<string, number>; // woodId -> kg
   quests: { desc: string; reward: number; done: boolean }[];
   xp: number;
@@ -13,6 +15,7 @@ type UserProfile = {
     work: number | null;
     hunt: number | null;
     fish: number | null;
+    daily: number | null;
     weekly: number | null;
     dungeon_nhan: number | null;
     dungeon_thien: number | null;
@@ -104,12 +107,18 @@ export class Store {
     writeFileSync(this.file, JSON.stringify(this.db, null, 2), 'utf8');
   }
 
+  getAllUsers(): UserProfile[] {
+    return Object.values(this.db.users);
+  }
+
   getUser(userId: string): UserProfile {
     if (!this.db.users[userId]) {
       this.db.users[userId] = {
         userId,
         balance: 0,
         daily: { last: null, streak: 0 },
+        lastDaily: '',
+        dailyStreak: 0,
         inventory: {},
         quests: this.generateQuests(),
         xp: 0,
@@ -118,6 +127,7 @@ export class Store {
           work: null,
           hunt: null,
           fish: null,
+          daily: null,
           weekly: null,
           dungeon_nhan: null,
           dungeon_thien: null,
@@ -417,7 +427,7 @@ export class Store {
   }
 
   // ====== COOLDOWN SYSTEM ======
-  checkCooldown(userId: string, type: 'work' | 'hunt' | 'fish' | 'weekly' | 'dungeon_nhan' | 'dungeon_thien' | 'dungeon_ma'): { canUse: boolean; remainingMinutes: number } {
+  checkCooldown(userId: string, type: 'work' | 'hunt' | 'fish' | 'daily' | 'weekly' | 'dungeon_nhan' | 'dungeon_thien' | 'dungeon_ma'): { canUse: boolean; remainingMinutes: number } {
     const user = this.getUser(userId);
     const cooldownTime = user.cooldowns[type];
     
@@ -437,7 +447,7 @@ export class Store {
     return { canUse: false, remainingMinutes: Math.ceil(remainingMs / 60000) };
   }
 
-  setCooldown(userId: string, type: 'work' | 'hunt' | 'fish' | 'weekly' | 'dungeon_nhan' | 'dungeon_thien' | 'dungeon_ma', baseMinutes: number): void {
+  setCooldown(userId: string, type: 'work' | 'hunt' | 'fish' | 'daily' | 'weekly' | 'dungeon_nhan' | 'dungeon_thien' | 'dungeon_ma', baseMinutes: number): void {
     const user = this.getUser(userId);
     
     // Áp dụng guild rank buff
