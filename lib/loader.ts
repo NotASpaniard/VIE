@@ -5,7 +5,7 @@ import { getEnv } from './env.js';
 
 export async function loadCommands(client: Client): Promise<void> {
   // Thư mục chứa các module lệnh (mỗi file có thể export prefix/slash hoặc mảng slashes/prefixes)
-  const commandsDir = path.join(process.cwd(), 'modules');
+  const commandsDir = path.join(process.cwd(), 'dist', 'modules');
   const env = getEnv();
 
   const slashJSON: any[] = [];
@@ -18,7 +18,7 @@ export async function loadCommands(client: Client): Promise<void> {
     } catch {
       continue;
     }
-    if (!file.endsWith('.ts') && !file.endsWith('.js')) continue;
+    if (!file.endsWith('.js')) continue;
     const imported = await import(pathToFileUrl(full));
     if (imported.slash) {
       const data: SlashCommandBuilder = imported.slash.data as SlashCommandBuilder;
@@ -58,7 +58,7 @@ export async function loadCommands(client: Client): Promise<void> {
       continue;
     }
     for (const file of safeReadDir(modPath)) {
-      if (!file.endsWith('.ts') && !file.endsWith('.js')) continue;
+      if (!file.endsWith('.js')) continue;
       const full = path.join(modPath, file);
       const imported = await import(pathToFileUrl(full));
 
