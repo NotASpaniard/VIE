@@ -118,25 +118,28 @@ export class Store {
           work: null,
           hunt: null,
           fish: null,
-          weekly: null
+          weekly: null,
+          dungeon_nhan: null,
+          dungeon_thien: null,
+          dungeon_ma: null
         },
         categorizedInventory: {
-          seeds: {},
-          crops: {},
+          eggs: {},
+          pets: {},
           weapons: {},
-          huntItems: {},
-          fishingGear: {},
-          fish: {},
+          monsterItems: {},
+          dungeonGear: {},
+          dungeonLoot: {},
           misc: {}
         },
         equippedItems: {
           weapon: null,
-          fishingRod: null,
-          bait: null
+          phuChu: null,
+          linhDan: null
         },
-        farm: {
+        hatchery: {
           level: 1,
-          plantedCrop: {
+          plantedEgg: {
             type: null,
             plantedAt: null,
             harvestAt: null
@@ -479,11 +482,11 @@ export class Store {
   }
 
   // ====== EQUIPMENT SYSTEM ======
-  equipItem(userId: string, slot: 'weapon' | 'fishingRod' | 'bait', itemId: string): { success: boolean; message: string } {
+  equipItem(userId: string, slot: 'weapon' | 'phuChu' | 'linhDan', itemId: string): { success: boolean; message: string } {
     const user = this.getUser(userId);
     
     // Kiểm tra có item trong inventory không
-    const category = slot === 'weapon' ? 'weapons' : slot === 'fishingRod' ? 'fishingGear' : 'fishingGear';
+    const category = slot === 'weapon' ? 'weapons' : slot === 'phuChu' ? 'dungeonGear' : 'dungeonGear';
     if (this.getItemQuantity(userId, category, itemId) <= 0) {
       return { success: false, message: 'Bạn không có item này trong túi đồ.' };
     }
@@ -493,38 +496,38 @@ export class Store {
     return { success: true, message: `Đã trang bị ${itemId}.` };
   }
 
-  // ====== FARM SYSTEM ======
-  plantCrop(userId: string, cropType: string): { success: boolean; message: string } {
+  // ====== HATCHERY SYSTEM ======
+  plantEgg(userId: string, eggType: string): { success: boolean; message: string } {
     const user = this.getUser(userId);
     
-    // Kiểm tra farm level
+    // Kiểm tra hatchery level
     const gameConfig = JSON.parse(readFileSync(path.join(process.cwd(), 'data/game_config.json'), 'utf8'));
-    const cropConfig = gameConfig.crops[cropType];
+    const eggConfig = gameConfig.eggs[eggType];
     
-    if (!cropConfig) {
-      return { success: false, message: 'Loại cây không hợp lệ.' };
+    if (!eggConfig) {
+      return { success: false, message: 'Loại trứng không hợp lệ.' };
     }
     
-    if (user.farm.level < cropConfig.levelRequired) {
-      return { success: false, message: `Cần farm level ${cropConfig.levelRequired} để trồng ${cropConfig.name}.` };
+    if (user.hatchery.level < eggConfig.levelRequired) {
+      return { success: false, message: `Cần trại level ${eggConfig.levelRequired} để ấp ${eggConfig.name}.` };
     }
     
-    // Kiểm tra đã trồng cây chưa
-    if (user.farm.plantedCrop.type) {
-      return { success: false, message: 'Đã có cây đang trồng. Hãy thu hoạch trước.' };
+    // Kiểm tra đã ấp trứng chưa
+    if (user.hatchery.plantedEgg.type) {
+      return { success: false, message: 'Đã có trứng đang ấp. Hãy thu hoạch trước.' };
     }
     
-    // Kiểm tra có hạt giống
-    const seedId = `${cropType}_seed`;
-    if (this.getItemQuantity(userId, 'seeds', seedId) <= 0) {
-      return { success: false, message: `Không có hạt giống ${cropConfig.name}.` };
+    // Kiểm tra có trứng
+    const eggId = `${eggType}_egg`;
+    if (this.getItemQuantity(userId, 'eggs', eggId) <= 0) {
+      return { success: false, message: `Không có trứng ${eggConfig.name}.` };
     }
     
-    // Trồng cây
-    this.removeItemFromInventory(userId, 'seeds', seedId, 1);
+    // Ấp trứng
+    this.removeItemFromInventory(userId, 'eggs', eggId, 1);
     
     const now = Date.now();
-    const growTimeMs = cropConfig.growTime * 60000; // Convert minutes to ms
+    const growTimeMs = eggConfig.growTime * 60000; // Convert minutes to ms
     
     // Áp dụng guild rank buff
     const userGuild = this.getUserGuild(userId);
@@ -534,45 +537,45 @@ export class Store {
       actualGrowTime = Math.max(60000, Math.floor(growTimeMs * (1 - buffs.cooldownReduction / 100)));
     }
     
-    user.farm.plantedCrop = {
-      type: cropType,
+    user.hatchery.plantedEgg = {
+      type: eggType,
       plantedAt: now,
       harvestAt: now + actualGrowTime
     };
     
     this.save();
-    return { success: true, message: `Đã trồng ${cropConfig.name}. Thu hoạch sau ${Math.ceil(actualGrowTime / 60000)} phút.` };
+    return { success: true, message: `Đã ấp ${eggConfig.name}. Thu hoạch sau ${Math.ceil(actualGrowTime / 60000)} phút.` };
   }
 
-  harvestCrop(userId: string): { success: boolean; message: string; reward: number; kg: number } {
+  hatchEgg(userId: string): { success: boolean; message: string; reward: number; kg: number } {
     const user = this.getUser(userId);
     
-    if (!user.farm.plantedCrop.type) {
-      return { success: false, message: 'Không có cây nào để thu hoạch.', reward: 0, kg: 0 };
+    if (!user.hatchery.plantedEgg.type) {
+      return { success: false, message: 'Không có trứng nào để thu hoạch.', reward: 0, kg: 0 };
     }
     
     const now = Date.now();
-    if (now < user.farm.plantedCrop.harvestAt!) {
-      const remainingMs = user.farm.plantedCrop.harvestAt! - now;
-      return { success: false, message: `Cây chưa chín. Còn ${Math.ceil(remainingMs / 60000)} phút.`, reward: 0, kg: 0 };
+    if (now < user.hatchery.plantedEgg.harvestAt!) {
+      const remainingMs = user.hatchery.plantedEgg.harvestAt! - now;
+      return { success: false, message: `Trứng chưa nở. Còn ${Math.ceil(remainingMs / 60000)} phút.`, reward: 0, kg: 0 };
     }
     
     const gameConfig = JSON.parse(readFileSync(path.join(process.cwd(), 'data/game_config.json'), 'utf8'));
-    const cropConfig = gameConfig.crops[user.farm.plantedCrop.type];
+    const eggConfig = gameConfig.eggs[user.hatchery.plantedEgg.type];
     
     // Random KG từ 0.1 - 100 KG
     const kg = Math.round((0.1 + Math.random() * 99.9) * 10) / 10; // Làm tròn 1 chữ số thập phân
     
     // Tính reward với bonus 10-30%
     const bonusPercent = 10 + Math.random() * 20; // 10-30%
-    const reward = Math.floor(cropConfig.baseReward * (1 + bonusPercent / 100));
+    const reward = Math.floor(eggConfig.baseReward * (1 + bonusPercent / 100));
     
     // Thêm reward vào balance và inventory
     user.balance += reward;
-    this.addItemToInventory(userId, 'crops', user.farm.plantedCrop.type, 1);
+    this.addItemToInventory(userId, 'pets', user.hatchery.plantedEgg.type, 1);
     
-    // Reset farm
-    user.farm.plantedCrop = {
+    // Reset hatchery
+    user.hatchery.plantedEgg = {
       type: null,
       plantedAt: null,
       harvestAt: null
@@ -612,95 +615,6 @@ export class Store {
     };
   }
 
-  // ====== HATCH SYSTEM ======
-  plantEgg(userId: string, eggType: string): { success: boolean; message: string } {
-    const user = this.getUser(userId);
-    const gameConfig = JSON.parse(readFileSync(path.join(process.cwd(), 'data/game_config.json'), 'utf8'));
-    
-    // Kiểm tra đã có trứng đang ấp chưa
-    if (user.hatchery.plantedEgg.type) {
-      return { success: false, message: 'Đã có trứng đang ấp. Hãy thu thập trước.' };
-    }
-    
-    // Kiểm tra egg type có hợp lệ không
-    const eggConfig = gameConfig.eggs[eggType];
-    if (!eggConfig) {
-      return { success: false, message: 'Loại trứng không hợp lệ.' };
-    }
-    
-    // Kiểm tra level trại
-    if (user.hatchery.level < eggConfig.levelRequired) {
-      return { success: false, message: `Cần trại level ${eggConfig.levelRequired} để ấp ${eggConfig.name}.` };
-    }
-    
-    // Kiểm tra có trứng không
-    const eggId = `${eggType}_egg`;
-    if (!this.getItemQuantity(userId, 'eggs', eggId)) {
-      return { success: false, message: `Không có trứng ${eggConfig.name}.` };
-    }
-    
-    // Trừ trứng
-    this.removeItemFromInventory(userId, 'eggs', eggId, 1);
-    
-    const now = Date.now();
-    const growTimeMs = eggConfig.growTime * 60000; // Convert minutes to ms
-    
-    // Áp dụng guild rank buff
-    const userGuild = this.getUserGuild(userId);
-    let actualGrowTime = growTimeMs;
-    if (userGuild) {
-      const buffs = this.getGuildRankBuffs(userGuild.guildRank.level);
-      actualGrowTime = Math.max(60000, Math.floor(growTimeMs * (1 - buffs.cooldownReduction / 100)));
-    }
-    
-    user.hatchery.plantedEgg = {
-      type: eggType,
-      plantedAt: now,
-      harvestAt: now + actualGrowTime
-    };
-    
-    this.save();
-    return { success: true, message: `Đã đặt ấp ${eggConfig.emoji} ${eggConfig.name}. Thu thập sau ${Math.ceil(actualGrowTime / 60000)} phút.` };
-  }
-
-  harvestEgg(userId: string): { success: boolean; message: string; reward: number; kg: number } {
-    const user = this.getUser(userId);
-    const gameConfig = JSON.parse(readFileSync(path.join(process.cwd(), 'data/game_config.json'), 'utf8'));
-    
-    if (!user.hatchery.plantedEgg.type) {
-      return { success: false, message: 'Không có trứng nào để thu thập.', reward: 0, kg: 0 };
-    }
-    
-    const now = Date.now();
-    if (now < user.hatchery.plantedEgg.harvestAt!) {
-      const remainingMs = user.hatchery.plantedEgg.harvestAt! - now;
-      return { success: false, message: `Trứng chưa nở. Còn ${Math.ceil(remainingMs / 60000)} phút.`, reward: 0, kg: 0 };
-    }
-    
-    const eggConfig = gameConfig.eggs[user.hatchery.plantedEgg.type];
-    
-    // Random KG từ 0.1 - 100 KG
-    const kg = Math.round((0.1 + Math.random() * 99.9) * 10) / 10; // Làm tròn 1 chữ số thập phân
-    
-    // Tính reward với bonus 10-30%
-    const bonusPercent = 10 + Math.random() * 20; // 10-30%
-    const reward = Math.floor(eggConfig.baseReward * (1 + bonusPercent / 100));
-    
-    // Thêm reward vào balance và inventory
-    user.balance += reward;
-    const petId = `${user.hatchery.plantedEgg.type}_pet`;
-    this.addItemToInventory(userId, 'pets', petId, 1);
-    
-    // Reset hatchery
-    user.hatchery.plantedEgg = {
-      type: null,
-      plantedAt: null,
-      harvestAt: null
-    };
-    
-    this.save();
-    return { success: true, message: `Ấp trứng thành công! +${reward} V (+${Math.floor(bonusPercent)}% bonus). Thu được ${kg} KG ${eggConfig.name}.`, reward, kg };
-  }
 
   // ====== DUNGEON SYSTEM ======
   enterDungeon(userId: string, tier: string): { success: boolean; message: string; rewards?: string } {

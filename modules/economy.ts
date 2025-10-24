@@ -236,12 +236,12 @@ export const prefixInventory: PrefixCommand = {
       .setTitle('🎒 Túi Đồ')
       .setColor('#8B4513')
       .addFields(
-        { name: '🌾 Hạt giống', value: formatItems(inv.seeds, '🌱'), inline: true },
-        { name: '🌽 Nông sản', value: formatItems(inv.crops, '🌾'), inline: true },
+        { name: '🥚 Trứng thần', value: formatItems(inv.eggs, '🥚'), inline: true },
+        { name: '🐉 Thần thú', value: formatItems(inv.pets, '🐉'), inline: true },
         { name: '⚔️ Vũ khí', value: formatItems(inv.weapons, '⚔️'), inline: true },
-        { name: '🥩 Đồ săn', value: formatItems(inv.huntItems, '🥩'), inline: true },
-        { name: '🎣 Đồ câu', value: formatItems(inv.fishingGear, '🎣'), inline: true },
-        { name: '🐟 Cá', value: formatItems(inv.fish, '🐟'), inline: true },
+        { name: '👻 Linh hồn', value: formatItems(inv.monsterItems, '👻'), inline: true },
+        { name: '🔮 Phù chú', value: formatItems(inv.dungeonGear, '🔮'), inline: true },
+        { name: '💎 Đồ ải', value: formatItems(inv.dungeonLoot, '💎'), inline: true },
         { name: '📦 Khác', value: formatItems(inv.misc, '📦'), inline: true }
       )
       .setTimestamp();

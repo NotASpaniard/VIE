@@ -58,7 +58,7 @@ export const prefixDungeonEnter: PrefixCommand = {
     
     // Kiểm tra cooldown
     const cooldownKey = `dungeon_${tier}`;
-    const cooldownCheck = store.checkCooldown(message.author.id, cooldownKey);
+    const cooldownCheck = store.checkCooldown(message.author.id, cooldownKey as any);
     
     if (!cooldownCheck.canUse) {
       await message.reply(`⏰ Bạn cần chờ ${cooldownCheck.remainingMinutes} phút nữa mới có thể vào ${tier} giới.`);
@@ -103,7 +103,7 @@ export const prefixDungeonEnter: PrefixCommand = {
     }
     
     // Set cooldown
-    store.setCooldown(message.author.id, cooldownKey, tierConfig.cooldown);
+    store.setCooldown(message.author.id, cooldownKey as any, tierConfig.cooldown);
     
     // Cộng XP
     const xpResult = store.addXP(message.author.id, 20);

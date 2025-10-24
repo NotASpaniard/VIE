@@ -92,7 +92,7 @@ export const prefixHatchCollect: PrefixCommand = {
   description: 'Thu thập thần thú',
   async execute(message) {
     const store = getStore();
-    const result = store.harvestEgg(message.author.id);
+    const result = store.hatchEgg(message.author.id);
     
     if (!result.success) {
       await message.reply(result.message);
