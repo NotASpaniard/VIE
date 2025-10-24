@@ -129,10 +129,6 @@ async function main(): Promise<void> {
     }
   });
 
-  // Start health server for Railway
-  const { startHealthServer } = await import('./lib/health.js');
-  const healthServer = startHealthServer(Number(process.env.PORT) || 3000);
-
   await client.login(env.DISCORD_TOKEN);
 }
 

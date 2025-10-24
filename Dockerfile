@@ -20,8 +20,5 @@ RUN npm prune --production
 # Set environment variables (can be overridden)
 ENV NODE_ENV=production
 
-# Expose port (if needed, e.g. for web server)
-# EXPOSE 3000
-
 # Start the bot
 CMD ["npm", "start"]
