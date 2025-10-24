@@ -40,6 +40,13 @@ export async function loadCommands(client: Client): Promise<void> {
         (client as any).prefixCommands.set(pc.name, pc);
       }
     }
+    
+    // Load individual prefix commands (prefixCash, prefixInfo, etc.)
+    for (const [key, value] of Object.entries(imported)) {
+      if (key.startsWith('prefix') && typeof value === 'object' && value !== null && 'name' in value) {
+        (client as any).prefixCommands.set((value as any).name, value);
+      }
+    }
   }
 
   // Nạp các file trong các thư mục con (nhóm tính năng)
@@ -76,6 +83,13 @@ export async function loadCommands(client: Client): Promise<void> {
       if (Array.isArray(imported.prefixes)) {
         for (const pc of imported.prefixes) {
           (client as any).prefixCommands.set(pc.name, pc);
+        }
+      }
+      
+      // Load individual prefix commands (prefixCash, prefixInfo, etc.)
+      for (const [key, value] of Object.entries(imported)) {
+        if (key.startsWith('prefix') && typeof value === 'object' && value !== null && 'name' in value) {
+          (client as any).prefixCommands.set((value as any).name, value);
         }
       }
     }

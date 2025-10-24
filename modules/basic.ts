@@ -160,7 +160,7 @@ export const prefixGive: PrefixCommand = {
     const to = store.getUser(target.id);
     to.balance += amount;
     store.save();
-    await message.reply(`Đã chuyển ${amount} LVC cho ${target}.`);
+    await message.reply(`Đã chuyển ${amount} V cho ${target}.`);
   }
 };
 
@@ -171,7 +171,7 @@ export const prefixBxh: PrefixCommand = {
   async execute(message) {
     const top = store.getTopBalances(10);
     const desc = top
-      .map((u, i) => `${i + 1}. <@${u.userId}> — ${u.balance} LVC`)
+      .map((u, i) => `${i + 1}. <@${u.userId}> — ${u.balance} V`)
       .join('\n');
     const embed = new EmbedBuilder().setTitle('BXH Giàu Nhất').setDescription(desc || 'Trống');
     await message.reply({ embeds: [embed] });
@@ -197,8 +197,8 @@ export const prefixQuest: PrefixCommand = {
     const rows = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder().setCustomId(`quest_refresh:${message.author.id}`).setLabel('Làm Mới').setStyle(ButtonStyle.Secondary)
     );
-    const lines = quests.map((q, idx) => `Nhiệm vụ ${idx + 1}: ${q.desc} — Thưởng ${q.reward} LVC — ${q.done ? 'Hoàn thành' : 'Chưa'}`);
-    await message.reply({ content: lines.join('\n') + '\nNhấn "Làm Mới" nếu nhiệm vụ quá khó (mất 2000 LVC).', components: [rows] });
+    const lines = quests.map((q, idx) => `Nhiệm vụ ${idx + 1}: ${q.desc} — Thưởng ${q.reward} V — ${q.done ? 'Hoàn thành' : 'Chưa'}`);
+    await message.reply({ content: lines.join('\n') + '\nNhấn "Làm Mới" nếu nhiệm vụ quá khó (mất 2000 V).', components: [rows] });
   }
 };
 

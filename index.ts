@@ -57,7 +57,7 @@ async function main(): Promise<void> {
           return;
         }
         const confirmRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-          new ButtonBuilder().setCustomId(`quest_refresh_confirm:${userId}`).setLabel('Xác Nhận Làm Mới (-2000 LVC)').setStyle(ButtonStyle.Danger)
+          new ButtonBuilder().setCustomId(`quest_refresh_confirm:${userId}`).setLabel('Xác Nhận Làm Mới (-2000 V)').setStyle(ButtonStyle.Danger)
         );
         await interaction.reply({ content: 'Xác nhận làm mới nhiệm vụ?', components: [confirmRow], ephemeral: true });
         return;
@@ -70,7 +70,7 @@ async function main(): Promise<void> {
         }
         const u = store.getUser(userId);
         if (u.balance < 2000) {
-          await interaction.reply({ content: 'Không đủ 2000 LVC để làm mới.', ephemeral: true });
+          await interaction.reply({ content: 'Không đủ 2000 V để làm mới.', ephemeral: true });
           return;
         }
         u.balance -= 2000;
