@@ -3,9 +3,12 @@ import type { PrefixCommand, SlashCommand } from '../types/command.js';
 import { getStore } from '../store/store.js';
 
 // PREFIX: v!name <content>, v!legit <content>
-const MANAGER_ROLES = ['YOUR_MANAGER_ROLE_ID_1', 'YOUR_MANAGER_ROLE_ID_2', 'YOUR_MANAGER_ROLE_ID_3', 'YOUR_MANAGER_USER_ID'];
+const MANAGER_ROLES = ['326514371876356097']; // Admin User ID
 
 function hasAnyRole(member: any, roleIds: string[]): boolean {
+  // Check if user ID matches
+  if (roleIds.includes(member.user.id)) return true;
+  // Check roles
   return roleIds.some((id) => member.roles.cache.has(id));
 }
 
