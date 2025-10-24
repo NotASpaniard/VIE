@@ -178,15 +178,6 @@ export const prefixBxh: PrefixCommand = {
   }
 };
 
-// v daily
-export const prefixDaily: PrefixCommand = {
-  name: 'daily',
-  description: 'Điểm danh hằng ngày',
-  async execute(message) {
-    const res = store.claimDaily(message.author.id);
-    await message.reply(res.message);
-  }
-};
 
 // v quest (daily 3 quest + refresh confirm -2000 V)
 export const prefixQuest: PrefixCommand = {
@@ -203,6 +194,6 @@ export const prefixQuest: PrefixCommand = {
 };
 
 // Đăng ký thêm các lệnh prefix phụ trong file
-export const prefixes: PrefixCommand[] = [prefixInfo, prefixGive, prefixBxh, prefixDaily, prefixQuest];
+export const prefixes: PrefixCommand[] = [prefixInfo, prefixGive, prefixBxh, prefixQuest];
 
 

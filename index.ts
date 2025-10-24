@@ -37,10 +37,14 @@ async function main(): Promise<void> {
         await cmd.execute(interaction);
       } catch (error) {
         console.error(error);
-        if (interaction.deferred || interaction.replied) {
-          await interaction.followUp({ content: 'Đã xảy ra lỗi khi chạy lệnh.', ephemeral: true });
-        } else {
-          await interaction.reply({ content: 'Đã xảy ra lỗi khi chạy lệnh.', ephemeral: true });
+        try {
+          if (interaction.deferred || interaction.replied) {
+            await interaction.followUp({ content: 'Đã xảy ra lỗi khi chạy lệnh.', ephemeral: true });
+          } else {
+            await interaction.reply({ content: 'Đã xảy ra lỗi khi chạy lệnh.', ephemeral: true });
+          }
+        } catch (replyError) {
+          console.error('Failed to send error message:', replyError);
         }
       }
       return;

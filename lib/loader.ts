@@ -48,70 +48,8 @@ export async function loadCommands(client: Client): Promise<void> {
       }
     }
     
-    // Load individual slash commands (slashWork, slashDaily, etc.)
-    for (const [key, value] of Object.entries(imported)) {
-      if (key.startsWith('slash') && typeof value === 'object' && value !== null && 'data' in value && 'execute' in value) {
-        const data: SlashCommandBuilder = (value as any).data as SlashCommandBuilder;
-        (client as any).commands.set(data.name, value);
-        slashJSON.push(data.toJSON());
-      }
-    }
   }
 
-  // Nạp các file trong các thư mục con (nhóm tính năng)
-  for (const modName of safeReadDir(commandsDir)) {
-    const modPath = path.join(commandsDir, modName);
-    try {
-      if (!statSync(modPath).isDirectory()) continue;
-    } catch {
-      continue;
-    }
-    for (const file of safeReadDir(modPath)) {
-      if (!file.endsWith('.js')) continue;
-      const full = path.join(modPath, file);
-      const imported = await import(pathToFileUrl(full));
-
-      // Xuất đơn
-      if (imported.slash) {
-        const data: SlashCommandBuilder = imported.slash.data as SlashCommandBuilder;
-        (client as any).commands.set(data.name, imported.slash);
-        slashJSON.push(data.toJSON());
-      }
-      if (imported.prefix) {
-        (client as any).prefixCommands.set(imported.prefix.name, imported.prefix);
-      }
-
-      // Xuất mảng
-      if (Array.isArray(imported.slashes)) {
-        for (const sc of imported.slashes) {
-          const data: SlashCommandBuilder = sc.data as SlashCommandBuilder;
-          (client as any).commands.set(data.name, sc);
-          slashJSON.push(data.toJSON());
-        }
-      }
-      if (Array.isArray(imported.prefixes)) {
-        for (const pc of imported.prefixes) {
-          (client as any).prefixCommands.set(pc.name, pc);
-        }
-      }
-      
-      // Load individual prefix commands (prefixCash, prefixInfo, etc.)
-      for (const [key, value] of Object.entries(imported)) {
-        if (key.startsWith('prefix') && typeof value === 'object' && value !== null && 'name' in value) {
-          (client as any).prefixCommands.set((value as any).name, value);
-        }
-      }
-      
-      // Load individual slash commands (slashWork, slashDaily, etc.)
-      for (const [key, value] of Object.entries(imported)) {
-        if (key.startsWith('slash') && typeof value === 'object' && value !== null && 'data' in value && 'execute' in value) {
-          const data: SlashCommandBuilder = (value as any).data as SlashCommandBuilder;
-          (client as any).commands.set(data.name, value);
-          slashJSON.push(data.toJSON());
-        }
-      }
-    }
-  }
 
   // Commands được đăng ký thông qua npm run register
   console.log(`Loaded ${slashJSON.length} slash commands.`);

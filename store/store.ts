@@ -231,6 +231,12 @@ export class Store {
       needsSave = true;
     }
     
+    // Ensure guilds exists in DB
+    if (!this.db.guilds) {
+      this.db.guilds = {};
+      needsSave = true;
+    }
+    
     if (needsSave) {
       this.save();
     }
