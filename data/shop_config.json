@@ -1,0 +1,130 @@
+{
+    "eggs": {
+        "rong_xanh_egg": {
+            "name": "Trứng Rồng Xanh",
+            "price": 0,
+            "levelRequired": 1,
+            "description": "Trứng thần thú - chỉ có thể lấy từ ải, không mua được"
+        },
+        "phuong_hoang_egg": {
+            "name": "Trứng Phượng Hoàng",
+            "price": 0,
+            "levelRequired": 2,
+            "description": "Trứng thần thú - chỉ có thể lấy từ ải, không mua được"
+        },
+        "ky_lan_egg": {
+            "name": "Trứng Kỳ Lân",
+            "price": 0,
+            "levelRequired": 3,
+            "description": "Trứng thần thú - chỉ có thể lấy từ ải, không mua được"
+        },
+        "bach_ho_egg": {
+            "name": "Trứng Bạch Hổ",
+            "price": 0,
+            "levelRequired": 4,
+            "description": "Trứng thần thú - chỉ có thể lấy từ ải, không mua được"
+        },
+        "huyen_vu_egg": {
+            "name": "Trứng Huyền Vũ",
+            "price": 0,
+            "levelRequired": 5,
+            "description": "Trứng thần thú - chỉ có thể lấy từ ải, không mua được"
+        }
+    },
+    "weapons": {
+        "kiem_go": {
+            "name": "Kiếm Gỗ",
+            "price": 0,
+            "levelRequired": 1,
+            "description": "Kiếm săn quái cơ bản miễn phí"
+        },
+        "kiem_sat": {
+            "name": "Kiếm Sắt",
+            "price": 800,
+            "levelRequired": 2,
+            "description": "Kiếm săn quái nâng cao - tăng 10% tỷ lệ săn thành công"
+        },
+        "kiem_bac": {
+            "name": "Kiếm Bạc",
+            "price": 2500,
+            "levelRequired": 3,
+            "description": "Kiếm săn quái cao cấp - tăng 20% tỷ lệ săn thành công"
+        },
+        "kiem_vang": {
+            "name": "Kiếm Vàng",
+            "price": 6000,
+            "levelRequired": 4,
+            "description": "Kiếm săn quái huyền thoại - tăng 30% tỷ lệ săn thành công"
+        },
+        "kiem_than": {
+            "name": "Kiếm Thần",
+            "price": 15000,
+            "levelRequired": 5,
+            "description": "Kiếm săn quái thần thánh - tăng 50% tỷ lệ săn thành công"
+        }
+    },
+    "dungeon_gear": {
+        "phu_chu_tre": {
+            "name": "Phù Chú Tre",
+            "price": 200,
+            "levelRequired": 1,
+            "description": "Phù chú cơ bản - tăng 5% cơ hội thành công khi vào ải"
+        },
+        "phu_chu_sat": {
+            "name": "Phù Chú Sắt",
+            "price": 500,
+            "levelRequired": 2,
+            "description": "Phù chú nâng cao - tăng 10% cơ hội thành công khi vào ải"
+        },
+        "phu_chu_bac": {
+            "name": "Phù Chú Bạc",
+            "price": 1200,
+            "levelRequired": 3,
+            "description": "Phù chú cao cấp - tăng 20% cơ hội thành công khi vào ải"
+        },
+        "phu_chu_vang": {
+            "name": "Phù Chú Vàng",
+            "price": 3000,
+            "levelRequired": 4,
+            "description": "Phù chú huyền thoại - tăng 30% cơ hội thành công khi vào ải"
+        },
+        "phu_chu_kim_cuong": {
+            "name": "Phù Chú Kim Cương",
+            "price": 8000,
+            "levelRequired": 5,
+            "description": "Phù chú thần thánh - tăng 50% cơ hội thành công khi vào ải"
+        },
+        "bua_ho_menh": {
+            "name": "Bùa Hộ Mệnh",
+            "price": 0,
+            "levelRequired": 1,
+            "description": "Cần thiết để vào Thiên Giới (craft từ 5 Linh Hồn Thấp)"
+        },
+        "linh_dan_cao_cap": {
+            "name": "Linh Đan Cấp Cao",
+            "price": 0,
+            "levelRequired": 5,
+            "description": "Cần thiết để vào Ma Giới (craft từ 10 Linh Hồn Cao)"
+        }
+    },
+    "roles": {
+        "ap_trung_su": {
+            "name": "Ấp Trứng Sư",
+            "price": 5000,
+            "levelRequired": 5,
+            "description": "Role Ấp Trứng Sư - giảm 10% thời gian ấp trứng"
+        },
+        "tru_ta_su": {
+            "name": "Trừ Tà Sư",
+            "price": 8000,
+            "levelRequired": 7,
+            "description": "Role Trừ Tà Sư - tăng 20% tỷ lệ săn quái thành công"
+        },
+        "pha_ai_su": {
+            "name": "Phá Ải Sư",
+            "price": 6000,
+            "levelRequired": 6,
+            "description": "Role Phá Ải Sư - tăng 15% cơ hội thành công khi vào ải"
+        }
+    }
+}
