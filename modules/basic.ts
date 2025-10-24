@@ -164,7 +164,7 @@ export const prefixGive: PrefixCommand = {
   }
 };
 
-// lv bxh
+// v bxh
 export const prefixBxh: PrefixCommand = {
   name: 'bxh',
   description: 'Bảng xếp hạng giàu nhất',
@@ -178,7 +178,7 @@ export const prefixBxh: PrefixCommand = {
   }
 };
 
-// lv daily
+// v daily
 export const prefixDaily: PrefixCommand = {
   name: 'daily',
   description: 'Điểm danh hằng ngày',
@@ -188,7 +188,7 @@ export const prefixDaily: PrefixCommand = {
   }
 };
 
-// lv quest (daily 3 quest + refresh confirm -2000 LVC)
+// v quest (daily 3 quest + refresh confirm -2000 LVC)
 export const prefixQuest: PrefixCommand = {
   name: 'quest',
   description: 'Nhiệm vụ hằng ngày',

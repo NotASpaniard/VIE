@@ -98,8 +98,8 @@ async function main(): Promise<void> {
 
   client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
-    // Hỗ trợ 2 tiền tố: "lv " (mặc định) và "lv!" cho nhóm quản trị
-    const prefixes = [env.PREFIX, 'lv!'];
+    // Hỗ trợ 2 tiền tố: "v " (mặc định) và "v!" cho nhóm quản trị
+    const prefixes = [env.PREFIX, 'v!'];
     const used = prefixes.find((p) => message.content.toLowerCase().startsWith(p));
     if (!used) return;
 

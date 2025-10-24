@@ -116,7 +116,7 @@ async function showRolesShop(message: any) {
   await message.reply({ embeds: [embed] });
 }
 
-// lv buy <item_id> [số lượng] - Mua item
+// v buy <item_id> [số lượng] - Mua item
 export const prefixBuy: PrefixCommand = {
   name: 'buy',
   description: 'Mua item từ cửa hàng',
@@ -202,7 +202,7 @@ export const prefixBuy: PrefixCommand = {
   }
 };
 
-// lv sell <item_id> [số lượng] - Bán item
+// v sell <item_id> [số lượng] - Bán item
 export const prefixSell: PrefixCommand = {
   name: 'sell',
   description: 'Bán item (70% giá mua)',

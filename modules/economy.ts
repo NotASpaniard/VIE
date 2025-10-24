@@ -160,7 +160,7 @@ export const prefixBet: PrefixCommand = {
   }
 };
 
-// lv profile [@user] - Xem profile đầy đủ
+// v profile [@user] - Xem profile đầy đủ
 export const prefixProfile: PrefixCommand = {
   name: 'profile',
   description: 'Xem profile đầy đủ của user',
@@ -217,7 +217,7 @@ export const prefixProfile: PrefixCommand = {
   }
 };
 
-// lv inventory / lv inv - Xem túi đồ phân loại
+// v inventory / v inv - Xem túi đồ phân loại
 export const prefixInventory: PrefixCommand = {
   name: 'inventory',
   description: 'Xem túi đồ phân loại theo category',

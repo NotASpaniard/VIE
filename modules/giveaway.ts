@@ -16,7 +16,7 @@ export const prefixGiveaway: PrefixCommand = {
     }
 
     if (args.length < 3) {
-      await message.reply('Cú pháp: `lv ga <số giờ> <số người win> <nội dung>` hoặc `lv ga <số giờ> <số người win> <role yêu cầu> <nội dung>`');
+      await message.reply('Cú pháp: `v ga <số giờ> <số người win> <nội dung>` hoặc `v ga <số giờ> <số người win> <role yêu cầu> <nội dung>`');
       return;
     }
 
@@ -93,7 +93,7 @@ export const prefixReroll: PrefixCommand = {
     }
 
     if (args.length < 1) {
-      await message.reply('Cú pháp: `lv reroll <id_message>`');
+      await message.reply('Cú pháp: `v reroll <id_message>`');
       return;
     }
 
@@ -161,7 +161,7 @@ export const prefixEndGiveaway: PrefixCommand = {
     }
 
     if (args.length < 1) {
-      await message.reply('Cú pháp: `lv end <id_message>`');
+      await message.reply('Cú pháp: `v end <id_message>`');
       return;
     }
 

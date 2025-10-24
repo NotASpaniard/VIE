@@ -130,7 +130,7 @@ export const prefixBlackjack: PrefixCommand = {
 // ====== BẦU CUA ======
 export const prefixBaucua: PrefixCommand = {
   name: 'baucua',
-  description: 'Chơi Bầu Cua: lv baucua <bầu|cua|tôm|cá|gà|nai> <số tiền>',
+  description: 'Chơi Bầu Cua: v baucua <bầu|cua|tôm|cá|gà|nai> <số tiền>',
   async execute(message, args) {
     const betChoice = args[0]?.toLowerCase();
     const amount = Number(args[1]);
@@ -196,7 +196,7 @@ export const prefixBaucua: PrefixCommand = {
 // ====== XÓC ĐĨA GAME ======
 export const prefixXocdia: PrefixCommand = {
   name: 'xocdia',
-  description: 'Chơi Xóc Đĩa: lv xocdia <chẵn|lẻ> <số tiền>',
+  description: 'Chơi Xóc Đĩa: v xocdia <chẵn|lẻ> <số tiền>',
   async execute(message, args) {
     const betChoice = args[0]?.toLowerCase();
     const amount = Number(args[1]);

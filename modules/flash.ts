@@ -13,7 +13,7 @@ export const prefixRenameChannel: PrefixCommand = {
     }
 
     if (args.length < 1) {
-      await message.reply('Cú pháp: `lv rn <tên_kênh_mới>`');
+      await message.reply('Cú pháp: `v rn <tên_kênh_mới>`');
       return;
     }
 
@@ -116,7 +116,7 @@ export const prefixClearMessages: PrefixCommand = {
     }
 
     if (args.length < 1) {
-      await message.reply('Cú pháp: `lv clear <số_lượng>`');
+      await message.reply('Cú pháp: `v clear <số_lượng>`');
       return;
     }
 
