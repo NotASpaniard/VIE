@@ -14,8 +14,14 @@ import { Client } from 'discord.js';
 
   const slash = Array.from((client as any).commands.values()).map((c: any) => c.data.toJSON());
   const rest = new REST({ version: '10' }).setToken(env.DISCORD_TOKEN);
-  await rest.put(Routes.applicationCommands(env.DISCORD_CLIENT_ID), { body: slash });
-  console.log(`Registered ${slash.length} global slash commands.`);
+  
+  if (env.DISCORD_GUILD_ID) {
+    await rest.put(Routes.applicationGuildCommands(env.DISCORD_CLIENT_ID, env.DISCORD_GUILD_ID), { body: slash });
+    console.log(`Registered ${slash.length} guild slash commands for server ${env.DISCORD_GUILD_ID}.`);
+  } else {
+    await rest.put(Routes.applicationCommands(env.DISCORD_CLIENT_ID), { body: slash });
+    console.log(`Registered ${slash.length} global slash commands.`);
+  }
 })();
 
 
