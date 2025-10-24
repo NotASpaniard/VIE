@@ -5,6 +5,11 @@
 .env.test.local
 .env.production.local
 
+# Discord Bot Tokens (NEVER COMMIT!)
+DISCORD_TOKEN=*
+*TOKEN*
+*SECRET*
+
 # Node modules
 node_modules/
 
