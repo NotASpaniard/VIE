@@ -70,12 +70,18 @@ export const prefixHunt: PrefixCommand = {
       // Tính reward
       reward = monsterReward.min + Math.floor(Math.random() * (monsterReward.max - monsterReward.min + 1));
       
+      // 🏆 BONUS ĐẶC BIỆT: Dép Tổ Ong tăng 50% V reward
+      let finalReward = reward;
+      if (user.equippedItems.weapon === 'dep_to_ong') {
+        const depBonus = Math.floor(reward * 0.5); // +50% V reward
+        finalReward += depBonus;
+      }
+      
       // Áp dụng guild rank buff
       const userGuild = store.getUserGuild(message.author.id);
-      let finalReward = reward;
       if (userGuild) {
         const buffs = store.getGuildRankBuffs(userGuild.guildRank.level);
-        const bonus = Math.floor(reward * buffs.incomeBonus / 100);
+        const bonus = Math.floor(finalReward * buffs.incomeBonus / 100);
         finalReward += bonus;
       }
       
@@ -84,7 +90,11 @@ export const prefixHunt: PrefixCommand = {
       // Thêm loot vào inventory
       store.addItemToInventory(message.author.id, 'monsterItems', monsterLoot, 1);
       
-      lootMessage = `\n💰 +${finalReward} V\n👻 +1 ${monsterLoot} (${kg} KG)`;
+      let bonusMessage = '';
+      if (user.equippedItems.weapon === 'dep_to_ong') {
+        bonusMessage = `\n🏆 Dép Tổ Ong bonus: +${Math.floor(reward * 0.5)} V`;
+      }
+      lootMessage = `\n💰 +${finalReward} V${bonusMessage}\n👻 +1 ${monsterLoot} (${kg} KG)`;
     }
     
     // Set cooldown

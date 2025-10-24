@@ -775,6 +775,12 @@ export class Store {
       rewards.push(`⚔️ +1 ${randomEquip}`);
     }
     
+    // 🏆 THẦN KHÍ SIÊU HIẾM - Dép Tổ Ong (chỉ từ Ma Giới)
+    if (tier === 'ma' && Math.random() * 100 < tierConfig.rewards.dep_to_ong) {
+      this.addItemToInventory(userId, 'weapons', 'dep_to_ong', 1);
+      rewards.push(`🏆 +1 DÉP TỔ ONG - THẦN KHÍ SIÊU HIẾM!`);
+    }
+    
     // Cập nhật stats
     if (!user.dungeonStats) {
       user.dungeonStats = {

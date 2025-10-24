@@ -127,7 +127,7 @@ export const prefixBlackjack: PrefixCommand = {
   }
 };
 
-// ====== BẦU CUA GAME ======
+// ====== BẦU CUA ======
 export const prefixBaucua: PrefixCommand = {
   name: 'baucua',
   description: 'Chơi Bầu Cua: lv baucua <bầu|cua|tôm|cá|gà|nai> <số tiền>',

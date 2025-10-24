@@ -61,6 +61,12 @@
             "price": 15000,
             "levelRequired": 5,
             "description": "Kiếm săn quái thần thánh - tăng 50% tỷ lệ săn thành công"
+        },
+        "dep_to_ong": {
+            "name": "Dép Tổ Ong",
+            "price": 0,
+            "levelRequired": 10,
+            "description": "🏆 THẦN KHÍ SIÊU HIẾM - Chỉ rơi từ Ma Giới (0.0001%) - Tăng 99% tỷ lệ săn thành công + 50% V reward"
         }
     },
     "dungeon_gear": {

@@ -128,7 +128,8 @@
                 "ngoc_linh": { "min": 50, "max": 200 },
                 "equipment_rare": 25,
                 "buff_items_rare": 20,
-                "mystery_chest": 5
+                "mystery_chest": 5,
+                "dep_to_ong": 0.0001
             },
             "emoji": "🔥"
         }
@@ -162,9 +163,12 @@
         "weekly": 10080
     },
     "weapon_bonuses": {
-        "cung": 5,
-        "noi_long_cung": 10,
-        "thuan_phong_cung": 15
+        "kiem_go": 0,
+        "kiem_sat": 10,
+        "kiem_bac": 20,
+        "kiem_vang": 30,
+        "kiem_than": 50,
+        "dep_to_ong": 99
     },
     "fishing_gear_bonuses": {
         "can_cau_tre": 5,

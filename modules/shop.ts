@@ -63,9 +63,10 @@ async function showWeaponsShop(message: any) {
   const shopConfig = JSON.parse(readFileSync(path.join(process.cwd(), 'data/shop_config.json'), 'utf8'));
   const weapons = shopConfig.weapons;
   
-  const items = Object.entries(weapons).map(([id, config]: [string, any]) => 
-    `**${config.name}** (${id})\n💰 ${config.price} V | Level ${config.levelRequired}\n${config.description}`
-  ).join('\n\n');
+  const items = Object.entries(weapons).map(([id, config]: [string, any]) => {
+    const priceText = config.price === 0 ? '🏆 KHÔNG BÁN' : `💰 ${config.price} V`;
+    return `**${config.name}** (${id})\n${priceText} | Level ${config.levelRequired}\n${config.description}`;
+  }).join('\n\n');
   
   const embed = new EmbedBuilder()
     .setTitle('⚔️ Cửa Hàng Binh Khí')
