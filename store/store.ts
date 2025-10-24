@@ -158,7 +158,84 @@ export class Store {
       };
       this.save();
     }
-    return this.db.users[userId];
+    
+    // MIGRATION: Fix old users missing new fields
+    const user = this.db.users[userId];
+    let needsSave = false;
+    
+    // Add missing lastDaily and dailyStreak
+    if (user.lastDaily === undefined) {
+      user.lastDaily = '';
+      needsSave = true;
+    }
+    if (user.dailyStreak === undefined) {
+      user.dailyStreak = 0;
+      needsSave = true;
+    }
+    
+    // Add missing cooldowns.daily
+    if (user.cooldowns && user.cooldowns.daily === undefined) {
+      user.cooldowns.daily = null;
+      needsSave = true;
+    }
+    
+    // Ensure cooldowns exists
+    if (!user.cooldowns) {
+      user.cooldowns = {
+        work: null,
+        hunt: null,
+        fish: null,
+        daily: null,
+        weekly: null,
+        dungeon_nhan: null,
+        dungeon_thien: null,
+        dungeon_ma: null
+      };
+      needsSave = true;
+    }
+    
+    // Ensure categorizedInventory exists
+    if (!user.categorizedInventory) {
+      user.categorizedInventory = {
+        eggs: {},
+        pets: {},
+        weapons: {},
+        monsterItems: {},
+        dungeonGear: {},
+        dungeonLoot: {},
+        misc: {}
+      };
+      needsSave = true;
+    }
+    
+    // Ensure equippedItems exists
+    if (!user.equippedItems) {
+      user.equippedItems = {
+        weapon: null,
+        phuChu: null,
+        linhDan: null
+      };
+      needsSave = true;
+    }
+    
+    // Ensure hatchery exists
+    if (!user.hatchery) {
+      user.hatchery = {
+        level: 1,
+        plantedEgg: {
+          type: null,
+          plantedAt: null,
+          harvestAt: null
+        }
+      };
+      needsSave = true;
+    }
+    
+    if (needsSave) {
+      this.save();
+    }
+    
+    return user;
   }
 
   getTopBalances(limit: number): { userId: string; balance: number }[] {

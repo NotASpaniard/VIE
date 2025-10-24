@@ -47,6 +47,15 @@ export async function loadCommands(client: Client): Promise<void> {
         (client as any).prefixCommands.set((value as any).name, value);
       }
     }
+    
+    // Load individual slash commands (slashWork, slashDaily, etc.)
+    for (const [key, value] of Object.entries(imported)) {
+      if (key.startsWith('slash') && typeof value === 'object' && value !== null && 'data' in value && 'execute' in value) {
+        const data: SlashCommandBuilder = (value as any).data as SlashCommandBuilder;
+        (client as any).commands.set(data.name, value);
+        slashJSON.push(data.toJSON());
+      }
+    }
   }
 
   // Nạp các file trong các thư mục con (nhóm tính năng)
@@ -90,6 +99,15 @@ export async function loadCommands(client: Client): Promise<void> {
       for (const [key, value] of Object.entries(imported)) {
         if (key.startsWith('prefix') && typeof value === 'object' && value !== null && 'name' in value) {
           (client as any).prefixCommands.set((value as any).name, value);
+        }
+      }
+      
+      // Load individual slash commands (slashWork, slashDaily, etc.)
+      for (const [key, value] of Object.entries(imported)) {
+        if (key.startsWith('slash') && typeof value === 'object' && value !== null && 'data' in value && 'execute' in value) {
+          const data: SlashCommandBuilder = (value as any).data as SlashCommandBuilder;
+          (client as any).commands.set(data.name, value);
+          slashJSON.push(data.toJSON());
         }
       }
     }
