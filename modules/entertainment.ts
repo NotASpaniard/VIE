@@ -119,7 +119,7 @@ export const prefixBlackjack: PrefixCommand = {
       .addFields(
         { name: '👤 Bài của bạn', value: `${playerCardsStr} (${playerScore})`, inline: true },
         { name: '🤖 Bài của dealer', value: `${dealerCardsStr} (${finalDealerScore})`, inline: true },
-        { name: '💰 Kết quả', value: `${result}\nCược: ${amount} LVC\nThắng: ${winnings} LVC`, inline: false }
+        { name: '💰 Kết quả', value: `${result}\nCược: ${amount} V\nThắng: ${winnings} V`, inline: false }
       )
       .setTimestamp();
     
@@ -185,7 +185,7 @@ export const prefixBaucua: PrefixCommand = {
       .addFields(
         { name: '🎯 Cược của bạn', value: `${emojiMap[betChoice]} ${betChoice}`, inline: true },
         { name: '🎲 Kết quả', value: resultsStr, inline: true },
-        { name: '💰 Kết quả', value: `${resultText}\nCược: ${amount} LVC\nThắng: ${winnings} LVC`, inline: false }
+        { name: '💰 Kết quả', value: `${resultText}\nCược: ${amount} V\nThắng: ${winnings} V`, inline: false }
       )
       .setTimestamp();
     
@@ -243,7 +243,7 @@ export const prefixXocdia: PrefixCommand = {
       .addFields(
         { name: '🎯 Cược của bạn', value: betChoice === 'chẵn' ? 'Chẵn (0,2,4 ngửa)' : 'Lẻ (1,3 ngửa)', inline: true },
         { name: '🪙 Kết quả', value: `${coinsStr}\nSố mặt ngửa: ${headsCount}`, inline: true },
-        { name: '💰 Kết quả', value: `${resultText}\nCược: ${amount} LVC\nThắng: ${winnings} LVC`, inline: false }
+        { name: '💰 Kết quả', value: `${resultText}\nCược: ${amount} V\nThắng: ${winnings} V`, inline: false }
       )
       .setTimestamp();
     

@@ -59,7 +59,7 @@ export const slashAdd: SlashCommand = {
     if (!hasAnyRole(member, MANAGER_ROLES)) { await interaction.reply({ content: 'Bạn không có quyền.', ephemeral: true }); return; }
     const user = interaction.options.getUser('user', true);
     const amount = interaction.options.getInteger('amount', true);
-    await interaction.reply({ content: `Xác nhận thêm ${amount} LVC cho ${user}?`, components: [buildConfirmRow(`admin_add:${user.id}:${amount}`, 'Xác Nhận')], ephemeral: true });
+    await interaction.reply({ content: `Xác nhận thêm ${amount} V cho ${user}?`, components: [buildConfirmRow(`admin_add:${user.id}:${amount}`, 'Xác Nhận')], ephemeral: true });
   }
 };
 
@@ -74,7 +74,7 @@ export const slashRemove: SlashCommand = {
     if (!hasAnyRole(member, MANAGER_ROLES)) { await interaction.reply({ content: 'Bạn không có quyền.', ephemeral: true }); return; }
     const user = interaction.options.getUser('user', true);
     const amount = interaction.options.getInteger('amount', true);
-    await interaction.reply({ content: `Xác nhận trừ ${amount} LVC của ${user}?`, components: [buildConfirmRow(`admin_remove:${user.id}:${amount}`, 'Xác Nhận')], ephemeral: true });
+    await interaction.reply({ content: `Xác nhận trừ ${amount} V của ${user}?`, components: [buildConfirmRow(`admin_remove:${user.id}:${amount}`, 'Xác Nhận')], ephemeral: true });
   }
 };
 

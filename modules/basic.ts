@@ -188,7 +188,7 @@ export const prefixDaily: PrefixCommand = {
   }
 };
 
-// v quest (daily 3 quest + refresh confirm -2000 LVC)
+// v quest (daily 3 quest + refresh confirm -2000 V)
 export const prefixQuest: PrefixCommand = {
   name: 'quest',
   description: 'Nhiệm vụ hằng ngày',

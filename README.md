@@ -412,9 +412,9 @@ Level = max(1, int((XP / 100) ** 0.5))
 - **Weekly:** 7 ngày
 
 ### Giới hạn hệ thống:
-- **Số dư tối đa:** 10,000,000 LVC
+- **Số dư tối đa:** 10,000,000 V
 - **Level tối đa:** 100
-- **Streak bonus tối đa:** 100 LVC
+- **Streak bonus tối đa:** 100 V
 
 ## 🐛 Xử Lý Lỗi
 

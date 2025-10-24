@@ -15,7 +15,7 @@
 - ✅ `plantCrop()` / `harvestCrop()` / `upgradeFarm()` - Hệ thống nông trại
 
 ### 3. **Economy Module** (`modules/economy.ts`)
-- ✅ `lv work` - Làm việc kiếm LVC (30 phút cooldown, +10 XP)
+- ✅ `lv work` - Làm việc kiếm V (30 phút cooldown, +10 XP)
 - ✅ `lv weekly` - Quà hàng tuần (7 ngày cooldown, +50 XP)
 - ✅ `lv bet <amount>` - Đặt cược may rủi 50/50
 - ✅ `lv profile [@user]` - Profile đầy đủ với level, XP, farm, equipped items

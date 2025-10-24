@@ -9,6 +9,7 @@
         "build": "tsc -p tsconfig.json",
         "render-postbuild": "npm run build",
         "register": "tsx tools/registerSlash.ts",
+        "register-all": "tsx tools/registerAllSlash.ts",
         "clear": "tsx tools/clearCommands.ts",
         "control": "powershell -ExecutionPolicy Bypass -File scripts/bot-control.ps1",
         "bot:start": "powershell -ExecutionPolicy Bypass -File scripts/bot-control.ps1 -Action start",
