@@ -255,7 +255,7 @@ export class Store {
     return this.getUser(userId).inventory;
   }
 
-  // Daily reward with VN time (GMT+7) + Campfire buffs
+  // Daily reward with VN time (GMT+7)
   claimDaily(userId: string): { amount: number; message: string } {
     const u = this.getUser(userId);
     const now = Date.now();

@@ -297,9 +297,6 @@ const commands = [
         )),
 
   // Basic Commands
-  new SlashCommandBuilder()
-    .setName('help')
-    .setDescription('Hướng dẫn sử dụng bot VIE'),
   
   new SlashCommandBuilder()
     .setName('info')

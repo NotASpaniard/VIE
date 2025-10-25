@@ -1,6 +1,6 @@
 @echo off
 echo ====================================
-echo     LUA VIET BOT CONTROL PANEL
+echo     VIE BOT CONTROL PANEL
 echo ====================================
 echo.
 echo 1. Start Bot (Development)

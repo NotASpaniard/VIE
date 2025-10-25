@@ -1,19 +1,19 @@
 {
   "users": {
-    "326514371876356097": {
-      "userId": "326514371876356097",
-      "balance": 2292,
+    "1180992570009067543": {
+      "userId": "1180992570009067543",
+      "balance": 10000399,
       "daily": {
         "last": null,
         "streak": 0
       },
-      "lastDaily": "Sat Oct 25 2025",
-      "dailyStreak": 1,
+      "lastDaily": "",
+      "dailyStreak": 0,
       "inventory": {},
       "quests": [
         {
-          "desc": "Đề cập 3 người",
-          "reward": 120,
+          "desc": "Chat 50 tin nhắn",
+          "reward": 200,
           "done": false
         },
         {
@@ -22,19 +22,81 @@
           "done": false
         },
         {
+          "desc": "Gửi 1 ảnh",
+          "reward": 100,
+          "done": false
+        }
+      ],
+      "xp": 10,
+      "level": 1,
+      "cooldowns": {
+        "work": 1761351747531,
+        "hunt": null,
+        "fish": null,
+        "daily": null,
+        "weekly": null,
+        "dungeon_nhan": null,
+        "dungeon_thien": null,
+        "dungeon_ma": null
+      },
+      "categorizedInventory": {
+        "eggs": {},
+        "pets": {},
+        "weapons": {},
+        "monsterItems": {},
+        "dungeonGear": {},
+        "dungeonLoot": {},
+        "misc": {}
+      },
+      "equippedItems": {
+        "weapon": null,
+        "phuChu": null,
+        "linhDan": null
+      },
+      "hatchery": {
+        "level": 1,
+        "plantedEgg": {
+          "type": null,
+          "plantedAt": null,
+          "harvestAt": null
+        }
+      }
+    },
+    "326514371876356097": {
+      "userId": "326514371876356097",
+      "balance": 986,
+      "daily": {
+        "last": null,
+        "streak": 0
+      },
+      "lastDaily": "",
+      "dailyStreak": 0,
+      "inventory": {},
+      "quests": [
+        {
+          "desc": "Dùng lệnh bất kỳ 5 lần",
+          "reward": 150,
+          "done": false
+        },
+        {
+          "desc": "Gửi 1 ảnh",
+          "reward": 100,
+          "done": false
+        },
+        {
           "desc": "Tham gia voice 10 phút",
           "reward": 300,
           "done": false
         }
       ],
-      "xp": 75,
+      "xp": 10,
       "level": 1,
       "cooldowns": {
-        "work": null,
+        "work": 1761353986452,
         "hunt": null,
         "fish": null,
-        "daily": 1761430811128,
-        "weekly": 1761949219842,
+        "daily": null,
+        "weekly": null,
         "dungeon_nhan": null,
         "dungeon_thien": null,
         "dungeon_ma": null

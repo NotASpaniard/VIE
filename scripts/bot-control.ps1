@@ -1,4 +1,4 @@
-# Lua Viet Bot Control Script
+# VIE Bot Control Script
 param(
     [string]$Action = ""
 )
@@ -6,7 +6,7 @@ param(
 function Show-Menu {
     Clear-Host
     Write-Host "====================================" -ForegroundColor Cyan
-    Write-Host "     LUA VIET BOT CONTROL PANEL     " -ForegroundColor Yellow
+    Write-Host "     VIE BOT CONTROL PANEL     " -ForegroundColor Yellow
     Write-Host "====================================" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "1. Start Bot (Development)" -ForegroundColor Green
@@ -19,11 +19,17 @@ function Show-Menu {
 }
 
 function Start-DevBot {
+    # Stop any existing instances first
+    Stop-BotProcesses
+    
     Write-Host "Starting bot in development mode..." -ForegroundColor Green
     npm run dev
 }
 
 function Start-ProdBot {
+    # Stop any existing instances first
+    Stop-BotProcesses
+    
     Write-Host "Building bot..." -ForegroundColor Yellow
     npm run build
     Write-Host "Starting bot in production mode..." -ForegroundColor Green
@@ -31,10 +37,20 @@ function Start-ProdBot {
 }
 
 function Stop-BotProcesses {
-    Write-Host "Stopping all Node.js processes..." -ForegroundColor Red
-    Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force
-    Write-Host "Bot processes stopped." -ForegroundColor Green
-    Start-Sleep 2
+    Write-Host "Stopping all bot instances..." -ForegroundColor Yellow
+    
+    # Kill all node.exe processes
+    Get-Process -Name "node" -ErrorAction SilentlyContinue | Stop-Process -Force
+    
+    # Remove lock file if exists
+    $lockFile = Join-Path $PSScriptRoot "..\\.bot.lock"
+    if (Test-Path $lockFile) {
+        Remove-Item $lockFile -Force
+        Write-Host "Removed lock file." -ForegroundColor Yellow
+    }
+    
+    Start-Sleep -Seconds 2
+    Write-Host "All bot instances stopped." -ForegroundColor Green
 }
 
 function Register-Commands {

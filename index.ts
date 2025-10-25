@@ -3,6 +3,43 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, Collection, Gatew
 import { loadCommands } from './lib/loader.js';
 import { getEnv } from './lib/env.js';
 import { getStore } from './store/store.js';
+import { existsSync, writeFileSync, unlinkSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+
+const LOCK_FILE = path.join(process.cwd(), '.bot.lock');
+
+function checkSingleInstance() {
+  if (existsSync(LOCK_FILE)) {
+    try {
+      const pid = readFileSync(LOCK_FILE, 'utf8');
+      console.error(`Bot is already running (PID: ${pid}). Exiting...`);
+      process.exit(1);
+    } catch (error) {
+      // Lock file exists but can't read - remove it
+      unlinkSync(LOCK_FILE);
+    }
+  }
+  
+  // Create lock file with current PID
+  writeFileSync(LOCK_FILE, process.pid.toString());
+  
+  // Clean up lock file on exit
+  process.on('exit', () => {
+    try {
+      unlinkSync(LOCK_FILE);
+    } catch (error) {
+      // Ignore errors
+    }
+  });
+  
+  process.on('SIGINT', () => {
+    console.log('\nShutting down bot...');
+    process.exit(0);
+  });
+}
+
+// Check for single instance before starting
+checkSingleInstance();
 
 async function main(): Promise<void> {
   const env = getEnv();
@@ -29,19 +66,25 @@ async function main(): Promise<void> {
 
   client.on('interactionCreate', async (interaction) => {
     // SLASH COMMANDS
-    // Slash commands
     if (interaction.isChatInputCommand()) {
       const cmd = (client as any).commands.get(interaction.commandName);
       if (!cmd) return;
+      
       try {
         await cmd.execute(interaction);
       } catch (error) {
-        console.error(error);
+        console.error(`Error in /${interaction.commandName}:`, error);
+        // Only reply if interaction hasn't been handled
         try {
-          if (interaction.deferred || interaction.replied) {
-            await interaction.followUp({ content: 'Đã xảy ra lỗi khi chạy lệnh.', ephemeral: true });
-          } else {
-            await interaction.reply({ content: 'Đã xảy ra lỗi khi chạy lệnh.', ephemeral: true });
+          if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({ 
+              content: 'Đã xảy ra lỗi khi chạy lệnh.', 
+              ephemeral: true 
+            });
+          } else if (interaction.deferred) {
+            await interaction.editReply({ 
+              content: 'Đã xảy ra lỗi khi chạy lệnh.' 
+            });
           }
         } catch (replyError) {
           console.error('Failed to send error message:', replyError);
@@ -100,6 +143,9 @@ async function main(): Promise<void> {
     }
   });
 
+  // PREFIX COMMANDS TEMPORARILY DISABLED
+  // Will re-enable after slash commands are fully stable and tested
+  /*
   client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
     // Hỗ trợ 2 tiền tố: "v " (mặc định) và "v!" cho nhóm quản trị
@@ -111,6 +157,8 @@ async function main(): Promise<void> {
     const [name, ...args] = withoutPrefix.split(/\s+/);
     const command = (client as any).prefixCommands.get(name.toLowerCase());
     if (!command) return;
+    
+    console.log(`Executing prefix command: ${name} for user ${message.author.id}`);
     
     // Danh sách các lệnh admin cần auto delete
     const adminCommands = ['ga', 'reroll', 'end', 'glist', 'rn', 'lock', 'unlock', 'clear'];
@@ -129,9 +177,15 @@ async function main(): Promise<void> {
       }
     } catch (error) {
       console.error(error);
-      await message.reply('Đã xảy ra lỗi khi chạy lệnh.');
+      // Only send error message if command hasn't already replied
+      try {
+        await message.reply('Đã xảy ra lỗi khi chạy lệnh.');
+      } catch (replyError) {
+        console.log('Command already replied, skipping error message');
+      }
     }
   });
+  */
 
   await client.login(env.DISCORD_TOKEN);
 }

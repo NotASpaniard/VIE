@@ -8,7 +8,7 @@ import { getEnv } from '../lib/env.js';
 export const slash: SlashCommand = {
   data: new SlashCommandBuilder()
     .setName('help')
-    .setDescription('Kiểm tra thông tin, cách dùng các lệnh basic và camping'),
+    .setDescription('Hướng dẫn sử dụng bot VIE'),
   async execute(interaction) {
     const embed = new EmbedBuilder()
       .setTitle('🏯 Hướng dẫn sử dụng bot VIE')

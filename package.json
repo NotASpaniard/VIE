@@ -4,6 +4,7 @@
     "type": "module",
     "private": true,
     "scripts": {
+        "prestart": "node -e \"const fs=require('fs');const f='.bot.lock';if(fs.existsSync(f))fs.unlinkSync(f)\"",
         "dev": "tsx watch index.ts",
         "start": "node dist/index.js",
         "build": "tsc -p tsconfig.json",
