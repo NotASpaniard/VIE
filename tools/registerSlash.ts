@@ -12,7 +12,16 @@ import { Client } from 'discord.js';
   (client as any).prefixCommands = new Map();
   await loadCommands(client);
 
-  const slash = Array.from((client as any).commands.values()).map((c: any) => c.data.toJSON());
+  // Exclude 9 persistent commands that already exist on Discord
+  const EXCLUDED_COMMANDS = [
+    'add', 'remove', 'resetmoney', 
+    'ping', 'reset', 'status', 'turnoff',
+    'help', 'guildowner'
+  ];
+
+  const slash = Array.from((client as any).commands.values())
+    .filter((c: any) => !EXCLUDED_COMMANDS.includes(c.data.name))
+    .map((c: any) => c.data.toJSON());
   const rest = new REST({ version: '10' }).setToken(env.DISCORD_TOKEN);
   
   if (env.DISCORD_GUILD_ID) {
