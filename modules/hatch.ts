@@ -167,4 +167,119 @@ export const prefixHatchMain: PrefixCommand = {
   }
 };
 
+// ===================== SLASH COMMANDS =====================
+
+// /hatch place - Đặt trứng ấp
+export const slashHatchPlace: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('hatch_place')
+    .setDescription('Đặt trứng ấp')
+    .addStringOption(option =>
+      option.setName('egg_type')
+        .setDescription('Loại trứng')
+        .setRequired(true)
+        .addChoices(
+          { name: 'Rồng Xanh', value: 'rong_xanh' },
+          { name: 'Phượng Hoàng', value: 'phuong_hoang' },
+          { name: 'Kỳ Lân', value: 'ky_lan' },
+          { name: 'Bạch Hổ', value: 'bach_ho' },
+          { name: 'Huyền Vũ', value: 'huyen_vu' }
+        )
+    ),
+  async execute(interaction) {
+    const eggType = interaction.options.getString('egg_type', true);
+    
+    const store = getStore();
+    const result = store.plantEgg(interaction.user.id, eggType);
+    
+    if (!result.success) {
+      await interaction.reply({ content: result.message, ephemeral: true });
+      return;
+    }
+    
+    const embed = new EmbedBuilder()
+      .setTitle('🥚 Đặt Trứng Ấp')
+      .setColor('#4fc3f7')
+      .setDescription(result.message)
+      .setTimestamp();
+    
+    await interaction.reply({ embeds: [embed] });
+  }
+};
+
+// /hatch collect - Thu thập thần thú
+export const slashHatchCollect: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('hatch_collect')
+    .setDescription('Thu thập thần thú đã nở'),
+  async execute(interaction) {
+    const store = getStore();
+    const result = store.hatchEgg(interaction.user.id);
+    
+    if (!result.success) {
+      await interaction.reply({ content: result.message, ephemeral: true });
+      return;
+    }
+    
+    // Cộng XP cho collect
+    const xpResult = store.addXP(interaction.user.id, 20);
+    
+    const embed = new EmbedBuilder()
+      .setTitle('🐉 Thu Thập Thần Thú')
+      .setColor('#ff6f00')
+      .setDescription(`${result.message}\n${xpResult.message}`)
+      .setTimestamp();
+    
+    await interaction.reply({ embeds: [embed] });
+  }
+};
+
+// /hatch upgrade - Nâng cấp trại
+export const slashHatchUpgrade: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('hatch_upgrade')
+    .setDescription('Nâng cấp trại ấp trứng'),
+  async execute(interaction) {
+    const store = getStore();
+    const result = store.upgradeHatchery(interaction.user.id);
+    
+    if (!result.success) {
+      await interaction.reply({ content: result.message, ephemeral: true });
+      return;
+    }
+    
+    const embed = new EmbedBuilder()
+      .setTitle('🏗️ Nâng Cấp Trại')
+      .setColor('#ff6f00')
+      .setDescription(result.message)
+      .setTimestamp();
+    
+    await interaction.reply({ embeds: [embed] });
+  }
+};
+
+// /hatch main - Menu chính hatch
+export const slashHatchMain: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('hatch_main')
+    .setDescription('Menu chính ấp trứng'),
+  async execute(interaction) {
+    const embed = new EmbedBuilder()
+      .setTitle('🥚 Menu Ấp Trứng')
+      .setDescription('Chọn hành động ấp trứng:')
+      .setColor('#4fc3f7')
+      .addFields(
+        { name: '📊 Trạng thái', value: '`/hatch` - Xem trạng thái trại ấp trứng', inline: false },
+        { name: '🥚 Đặt trứng', value: '`/hatch_place <loại>` - Đặt trứng ấp', inline: false },
+        { name: '🐉 Thu thập', value: '`/hatch_collect` - Thu thập thần thú đã nở', inline: false },
+        { name: '🏗️ Nâng cấp', value: '`/hatch_upgrade` - Nâng cấp trại', inline: false }
+      )
+      .setTimestamp();
+    
+    await interaction.reply({ embeds: [embed] });
+  }
+};
+
+export const slashes: SlashCommand[] = [slashHatch, slashHatchPlace, slashHatchCollect, slashHatchUpgrade, slashHatchMain];
+
 export const prefixes: PrefixCommand[] = [prefixHatchMain];

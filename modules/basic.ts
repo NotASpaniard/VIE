@@ -193,6 +193,105 @@ export const prefixQuest: PrefixCommand = {
   }
 };
 
+// ===================== SLASH COMMANDS =====================
+
+// /info - Thông tin server
+export const slashInfo: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('info')
+    .setDescription('Hiển thị thông tin server'),
+  async execute(interaction) {
+    const g = interaction.guild!;
+    const embed = new EmbedBuilder()
+      .setTitle(`Thông tin server: ${g.name}`)
+      .setColor('#1a237e')
+      .addFields(
+        { name: 'ID', value: g.id, inline: true },
+        { name: 'Thành viên', value: `${g.memberCount}`, inline: true }
+      );
+    await interaction.reply({ embeds: [embed] });
+  }
+};
+
+// /give - Chuyển tiền cho người dùng khác
+export const slashGive: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('give')
+    .setDescription('Chuyển tiền cho người dùng khác')
+    .addUserOption(option => 
+      option.setName('user')
+        .setDescription('Người dùng nhận tiền')
+        .setRequired(true)
+    )
+    .addIntegerOption(option => 
+      option.setName('amount')
+        .setDescription('Số tiền chuyển')
+        .setRequired(true)
+        .setMinValue(1)
+    ),
+  async execute(interaction) {
+    const target = interaction.options.getUser('user', true);
+    const amount = interaction.options.getInteger('amount', true);
+    
+    if (target.id === interaction.user.id) {
+      await interaction.reply({ content: 'Không thể chuyển tiền cho chính mình.', ephemeral: true });
+      return;
+    }
+    
+    const from = store.getUser(interaction.user.id);
+    if (from.balance < amount) {
+      await interaction.reply({ content: 'Không đủ số dư.', ephemeral: true });
+      return;
+    }
+    
+    from.balance -= amount;
+    const to = store.getUser(target.id);
+    to.balance += amount;
+    store.save();
+    
+    await interaction.reply(`Đã chuyển ${amount} V cho ${target}.`);
+  }
+};
+
+// /bxh - Bảng xếp hạng giàu nhất
+export const slashBxh: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('bxh')
+    .setDescription('Bảng xếp hạng giàu nhất'),
+  async execute(interaction) {
+    const top = store.getTopBalances(10);
+    const desc = top
+      .map((u, i) => `${i + 1}. <@${u.userId}> — ${u.balance} V`)
+      .join('\n');
+    const embed = new EmbedBuilder()
+      .setTitle('BXH Giàu Nhất')
+      .setDescription(desc || 'Trống')
+      .setColor('#FFD700');
+    await interaction.reply({ embeds: [embed] });
+  }
+};
+
+// /quest - Nhiệm vụ hằng ngày
+export const slashQuest: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('quest')
+    .setDescription('Nhiệm vụ hằng ngày'),
+  async execute(interaction) {
+    const quests = store.getDailyQuests(interaction.user.id);
+    const rows = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`quest_refresh:${interaction.user.id}`)
+        .setLabel('Làm Mới')
+        .setStyle(ButtonStyle.Secondary)
+    );
+    const lines = quests.map((q, idx) => `Nhiệm vụ ${idx + 1}: ${q.desc} — Thưởng ${q.reward} V — ${q.done ? 'Hoàn thành' : 'Chưa'}`);
+    await interaction.reply({ 
+      content: lines.join('\n') + '\nNhấn "Làm Mới" nếu nhiệm vụ quá khó (mất 2000 V).', 
+      components: [rows] 
+    });
+  }
+};
+
 // Đăng ký thêm các lệnh prefix phụ trong file
 export const prefixes: PrefixCommand[] = [prefixInfo, prefixGive, prefixBxh, prefixQuest];
 

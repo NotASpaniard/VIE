@@ -350,4 +350,122 @@ export const prefixHuntMain: PrefixCommand = {
   }
 };
 
+// ===================== SLASH COMMANDS =====================
+
+// /hunt equip - Trang bị vũ khí săn quái
+export const slashHuntEquip: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('hunt_equip')
+    .setDescription('Trang bị vũ khí săn quái')
+    .addStringOption(option =>
+      option.setName('weapon')
+        .setDescription('Tên vũ khí')
+        .setRequired(true)
+    ),
+  async execute(interaction) {
+    const weaponName = interaction.options.getString('weapon', true);
+    
+    const store = getStore();
+    const result = store.equipItem(interaction.user.id, 'weapon', weaponName);
+    
+    const embed = new EmbedBuilder()
+      .setTitle('⚔️ Trang Bị Vũ Khí')
+      .setColor(result.success ? '#00FF00' : '#FF0000')
+      .setDescription(result.message)
+      .setTimestamp();
+    
+    await interaction.reply({ embeds: [embed] });
+  }
+};
+
+// /hunt inventory - Xem đồ săn quái
+export const slashHuntInventory: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('hunt_inventory')
+    .setDescription('Xem đồ săn quái'),
+  async execute(interaction) {
+    const store = getStore();
+    const user = store.getUser(interaction.user.id);
+    const monsterItems = user.categorizedInventory.monsterItems;
+    const weapons = user.categorizedInventory.weapons;
+    
+    const formatItems = (items: Record<string, number>, emoji: string) => {
+      const entries = Object.entries(items);
+      if (entries.length === 0) return `${emoji} Trống`;
+      return entries.map(([item, qty]) => `${emoji} ${item}: ${qty}`).join('\n');
+    };
+    
+    const embed = new EmbedBuilder()
+      .setTitle('⚔️ Đồ Săn Quái')
+      .setColor('#1a237e')
+      .addFields(
+        { name: '⚔️ Vũ khí', value: formatItems(weapons, '⚔️'), inline: true },
+        { name: '👻 Linh hồn quái', value: formatItems(monsterItems, '👻'), inline: true },
+        { name: '🎯 Đang trang bị', value: user.equippedItems.weapon || 'Không có', inline: true }
+      )
+      .setTimestamp();
+    
+    await interaction.reply({ embeds: [embed] });
+  }
+};
+
+// /hunt use - Dùng bùa phép
+export const slashHuntUse: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('hunt_use')
+    .setDescription('Dùng bùa phép tăng tỷ lệ săn quái')
+    .addStringOption(option =>
+      option.setName('item')
+        .setDescription('Tên bùa phép')
+        .setRequired(true)
+        .addChoices(
+          { name: 'Lucky Charm', value: 'lucky_charm' }
+        )
+    ),
+  async execute(interaction) {
+    const itemName = interaction.options.getString('item', true);
+    
+    const store = getStore();
+    const user = store.getUser(interaction.user.id);
+    
+    if (itemName === 'lucky_charm') {
+      const hasCharm = store.getItemQuantity(interaction.user.id, 'monsterItems', 'lucky_charm') > 0;
+      if (!hasCharm) {
+        await interaction.reply({ content: 'Bạn không có lucky charm.', ephemeral: true });
+        return;
+      }
+      
+      // Lucky charm sẽ được dùng tự động khi hunt
+      await interaction.reply('🍀 Lucky charm đã được kích hoạt! Sẽ được dùng trong lần săn tiếp theo.');
+      return;
+    }
+    
+    await interaction.reply({ content: 'Chỉ có thể dùng lucky_charm.', ephemeral: true });
+  }
+};
+
+// /hunt main - Menu chính hunt
+export const slashHuntMain: SlashCommand = {
+  data: new SlashCommandBuilder()
+    .setName('hunt_main')
+    .setDescription('Menu chính săn quái'),
+  async execute(interaction) {
+    const embed = new EmbedBuilder()
+      .setTitle('⚔️ Menu Săn Quái')
+      .setDescription('Chọn hành động săn quái:')
+      .setColor('#1a237e')
+      .addFields(
+        { name: '🎯 Săn quái', value: '`/hunt` - Bắt đầu săn quái (2 phút)', inline: false },
+        { name: '⚔️ Trang bị', value: '`/hunt_equip <vũ_khí>` - Trang bị vũ khí', inline: false },
+        { name: '🎒 Túi đồ', value: '`/hunt_inventory` - Xem đồ săn quái', inline: false },
+        { name: '🔮 Bùa phép', value: '`/hunt_use <bùa>` - Dùng bùa phép', inline: false }
+      )
+      .setTimestamp();
+    
+    await interaction.reply({ embeds: [embed] });
+  }
+};
+
+export const slashes: SlashCommand[] = [slashHunt, slashHuntEquip, slashHuntInventory, slashHuntUse, slashHuntMain];
+
 export const prefixes: PrefixCommand[] = [prefixHuntMain];

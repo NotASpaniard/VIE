@@ -2,7 +2,7 @@
   "users": {
     "1180992570009067543": {
       "userId": "1180992570009067543",
-      "balance": 10000199,
+      "balance": 9873582,
       "daily": {
         "last": null,
         "streak": 0
@@ -12,22 +12,22 @@
       "inventory": {},
       "quests": [
         {
-          "desc": "Chat 50 tin nhắn",
-          "reward": 200,
+          "desc": "Dùng lệnh bất kỳ 5 lần",
+          "reward": 150,
           "done": false
         },
         {
-          "desc": "Chat 50 tin nhắn",
-          "reward": 200,
+          "desc": "Dùng lệnh bất kỳ 5 lần",
+          "reward": 150,
           "done": false
         },
         {
-          "desc": "Gửi 1 ảnh",
-          "reward": 100,
+          "desc": "Đề cập 3 người",
+          "reward": 120,
           "done": false
         }
       ],
-      "xp": 10,
+      "xp": 30,
       "level": 1,
       "cooldowns": {
         "work": 1761351747531,
@@ -35,7 +35,7 @@
         "fish": null,
         "daily": null,
         "weekly": null,
-        "dungeon_nhan": null,
+        "dungeon_nhan": 1761436134614,
         "dungeon_thien": null,
         "dungeon_ma": null
       },
@@ -45,7 +45,9 @@
         "weapons": {},
         "monsterItems": {},
         "dungeonGear": {},
-        "dungeonLoot": {},
+        "dungeonLoot": {
+          "ngoc_linh": 5
+        },
         "misc": {}
       },
       "equippedItems": {
@@ -54,12 +56,20 @@
         "linhDan": null
       },
       "hatchery": {
-        "level": 1,
+        "level": 5,
         "plantedEgg": {
-          "type": null,
-          "plantedAt": null,
-          "harvestAt": null
+          "type": "phuong_hoang",
+          "plantedAt": 1761435883235,
+          "harvestAt": 1761437683235
         }
+      },
+      "dungeonStats": {
+        "totalClears": 1,
+        "successRate": 100,
+        "totalEarned": 83,
+        "eggsCollected": 0,
+        "soulsCollected": 0,
+        "ngocLinhCollected": 0
       }
     },
     "326514371876356097": {
@@ -125,5 +135,49 @@
       }
     }
   },
-  "guilds": {}
+  "guilds": {
+    "Tank Beo I": {
+      "name": "Tank Beo I",
+      "ownerId": "1180992570009067543",
+      "roleId": null,
+      "members": [
+        "1180992570009067543"
+      ],
+      "inventory": {},
+      "fire": {
+        "until": null
+      },
+      "quests": [
+        {
+          "desc": "Tham gia voice 10 phút",
+          "reward": 300,
+          "done": false
+        },
+        {
+          "desc": "Chat 50 tin nhắn",
+          "reward": 200,
+          "done": false
+        },
+        {
+          "desc": "Gửi 1 ảnh",
+          "reward": 100,
+          "done": false
+        }
+      ],
+      "daily": {
+        "day": 20387,
+        "completed": [
+          "1180992570009067543"
+        ]
+      },
+      "guildRank": {
+        "level": 1,
+        "funds": 1000,
+        "totalContributed": 1000,
+        "contributors": {
+          "1180992570009067543": 1000
+        }
+      }
+    }
+  }
 }
