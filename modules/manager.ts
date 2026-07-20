@@ -1,14 +1,20 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import type { PrefixCommand, SlashCommand } from '../types/command.js';
 import { getStore } from '../store/store.js';
+import { getEnv } from '../lib/env.js';
 
-// PREFIX: v!name <content>, v!legit <content>
-const MANAGER_ROLES = ['326514371876356097']; // Admin User ID
+// Danh sách admin đọc từ .env (ADMIN_IDS="id1,id2"). Không hard-code ID cá nhân nào.
+const MANAGER_ROLES = (getEnv().ADMIN_IDS ?? '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 function hasAnyRole(member: any, roleIds: string[]): boolean {
-  // Check if user ID matches
+  // Quản trị viên của server luôn được phép (phòng khi chưa cấu hình ADMIN_IDS)
+  if (member?.permissions?.has?.(PermissionFlagsBits.Administrator)) return true;
+  // Khớp User ID trong ADMIN_IDS
   if (roleIds.includes(member.user.id)) return true;
-  // Check roles
+  // Hoặc sở hữu role có ID nằm trong ADMIN_IDS
   return roleIds.some((id) => member.roles.cache.has(id));
 }
 

@@ -1,35 +1,17 @@
 {
     "eggs": {
-        "rong_xanh_egg": {
-            "name": "Trứng Rồng Xanh",
-            "price": 0,
-            "levelRequired": 1,
-            "description": "Trứng thần thú - chỉ có thể lấy từ ải, không mua được"
-        },
-        "phuong_hoang_egg": {
-            "name": "Trứng Phượng Hoàng",
-            "price": 0,
-            "levelRequired": 2,
-            "description": "Trứng thần thú - chỉ có thể lấy từ ải, không mua được"
-        },
-        "ky_lan_egg": {
-            "name": "Trứng Kỳ Lân",
-            "price": 0,
-            "levelRequired": 3,
-            "description": "Trứng thần thú - chỉ có thể lấy từ ải, không mua được"
-        },
-        "bach_ho_egg": {
-            "name": "Trứng Bạch Hổ",
-            "price": 0,
-            "levelRequired": 4,
-            "description": "Trứng thần thú - chỉ có thể lấy từ ải, không mua được"
-        },
-        "huyen_vu_egg": {
-            "name": "Trứng Huyền Vũ",
-            "price": 0,
-            "levelRequired": 5,
-            "description": "Trứng thần thú - chỉ có thể lấy từ ải, không mua được"
-        }
+        "chuot_egg": { "name": "Trứng Tý (Chuột)", "price": 400, "levelRequired": 1, "description": "🐭 Mạnh: +5 Chí mạng · Yếu: -10 Máu ải" },
+        "trau_egg": { "name": "Trứng Sửu (Trâu)", "price": 400, "levelRequired": 1, "description": "🐃 Mạnh: +30 Máu ải · Yếu: -3 Chí mạng" },
+        "ho_egg": { "name": "Trứng Dần (Hổ)", "price": 550, "levelRequired": 1, "description": "🐅 Mạnh: +6 Sát thương ải · Yếu: -5 Giáp ải" },
+        "meo_egg": { "name": "Trứng Mão (Mèo)", "price": 450, "levelRequired": 1, "description": "🐈 Mạnh: +6 Giáp ải · Yếu: -12 Máu ải" },
+        "rong_egg": { "name": "Trứng Thìn (Rồng)", "price": 800, "levelRequired": 1, "description": "🐉 Mạnh: +8 Sát thương ải · Yếu: -6 Tỷ lệ săn" },
+        "ran_egg": { "name": "Trứng Tỵ (Rắn)", "price": 550, "levelRequired": 1, "description": "🐍 Mạnh: +7 Chí mạng · Yếu: -12 Máu ải" },
+        "ngua_egg": { "name": "Trứng Ngọ (Ngựa)", "price": 550, "levelRequired": 1, "description": "🐎 Mạnh: +8 Tỷ lệ săn · Yếu: -4 Giáp ải" },
+        "de_egg": { "name": "Trứng Mùi (Dê)", "price": 400, "levelRequired": 1, "description": "🐐 Mạnh: +20 Máu ải · Yếu: -3 Sát thương ải" },
+        "khi_egg": { "name": "Trứng Thân (Khỉ)", "price": 500, "levelRequired": 1, "description": "🐒 Mạnh: +6 Tỷ lệ săn · Yếu: -10 Máu ải" },
+        "ga_egg": { "name": "Trứng Dậu (Gà)", "price": 400, "levelRequired": 1, "description": "🐓 Mạnh: +5 Giáp ải · Yếu: -3 Sát thương ải" },
+        "cho_egg": { "name": "Trứng Tuất (Chó)", "price": 450, "levelRequired": 1, "description": "🐕 Mạnh: +25 Máu ải · Yếu: -2 Chí mạng" },
+        "lon_egg": { "name": "Trứng Hợi (Lợn)", "price": 400, "levelRequired": 1, "description": "🐖 Mạnh: +22 Máu ải · Yếu: -4 Tỷ lệ săn" }
     },
     "weapons": {
         "kiem_go": {

@@ -10,6 +10,7 @@
         "build": "tsc -p tsconfig.json",
         "render-postbuild": "npm run build",
         "register": "tsx tools/registerSlash.ts",
+        "register:global": "tsx tools/registerSlash.ts --global",
         "register-all": "tsx tools/registerAllSlash.ts",
         "clear": "tsx tools/clearCommands.ts",
         "verify": "tsx tools/verifyCommands.ts",

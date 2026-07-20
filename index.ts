@@ -8,34 +8,36 @@ import path from 'node:path';
 
 const LOCK_FILE = path.join(process.cwd(), '.bot.lock');
 
+function isProcessAlive(pid: number): boolean {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0); // signal 0 = chỉ kiểm tra tồn tại, không giết
+    return true;
+  } catch (err: any) {
+    return err?.code === 'EPERM'; // tồn tại nhưng khác quyền
+  }
+}
+
 function checkSingleInstance() {
   if (existsSync(LOCK_FILE)) {
-    try {
-      const pid = readFileSync(LOCK_FILE, 'utf8');
-      console.error(`Bot is already running (PID: ${pid}). Exiting...`);
+    const pid = Number(readFileSync(LOCK_FILE, 'utf8').trim());
+    if (pid !== process.pid && isProcessAlive(pid)) {
+      console.error(`Bot đang chạy thật (PID: ${pid}). Thoát...`);
       process.exit(1);
-    } catch (error) {
-      // Lock file exists but can't read - remove it
-      unlinkSync(LOCK_FILE);
     }
+    // Lock mồ côi (tiến trình đã chết, vd tsx watch restart / crash) -> dọn và tiếp tục
+    try { unlinkSync(LOCK_FILE); } catch { /* ignore */ }
   }
-  
-  // Create lock file with current PID
+
+  // Tạo lock mới với PID hiện tại
   writeFileSync(LOCK_FILE, process.pid.toString());
-  
-  // Clean up lock file on exit
-  process.on('exit', () => {
-    try {
-      unlinkSync(LOCK_FILE);
-    } catch (error) {
-      // Ignore errors
-    }
-  });
-  
-  process.on('SIGINT', () => {
-    console.log('\nShutting down bot...');
-    process.exit(0);
-  });
+
+  const cleanup = () => {
+    try { unlinkSync(LOCK_FILE); } catch { /* ignore */ }
+  };
+  process.on('exit', cleanup);
+  process.on('SIGINT', () => { console.log('\nShutting down bot...'); process.exit(0); });
+  process.on('SIGTERM', () => { cleanup(); process.exit(0); }); // tsx watch gửi SIGTERM khi reload
 }
 
 // Check for single instance before starting
@@ -62,6 +64,8 @@ async function main(): Promise<void> {
 
   client.once('ready', () => {
     console.log(`Logged in as ${client.user?.tag}`);
+    // Khôi phục timer cho các giveaway chưa kết thúc (sống sót qua restart)
+    void import('./modules/giveaway.js').then((m) => m.restoreGiveaways(client)).catch(() => {});
   });
 
   client.on('interactionCreate', async (interaction) => {
@@ -143,9 +147,7 @@ async function main(): Promise<void> {
     }
   });
 
-  // PREFIX COMMANDS TEMPORARILY DISABLED
-  // Will re-enable after slash commands are fully stable and tested
-  /*
+  // PREFIX COMMANDS (re-enabled) — cần bật intent "Message Content" trong Developer Portal
   client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.guild) return;
     // Hỗ trợ 2 tiền tố: "v " (mặc định) và "v!" cho nhóm quản trị
@@ -185,7 +187,6 @@ async function main(): Promise<void> {
       }
     }
   });
-  */
 
   await client.login(env.DISCORD_TOKEN);
 }

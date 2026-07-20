@@ -1,871 +1,297 @@
-import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder, User } from 'discord.js';
 import type { PrefixCommand, SlashCommand } from '../types/command.js';
 import { getStore } from '../store/store.js';
+import * as ui from '../lib/ui.js';
+import { getIcon } from '../lib/icons.js';
 
+const store = getStore();
+type R = { embed: EmbedBuilder; ok: boolean };
 
-// v work - Làm việc kiếm tiền
+function guildBonus(userId: string, base: number): { final: number; pct: number } {
+  const g = store.getUserGuild(userId);
+  if (!g) return { final: base, pct: 0 };
+  const b = store.getGuildRankBuffs(g.guildRank.level);
+  return { final: base + Math.floor((base * b.incomeBonus) / 100), pct: b.incomeBonus };
+}
 
-// /work - Slash command handler
-export const slashWork: SlashCommand = {
-  data: new SlashCommandBuilder()
-    .setName('work')
-    .setDescription('Làm việc kiếm V (cooldown 1 giờ)'),
-  async execute(interaction) {
-    const store = getStore();
-    const cooldownCheck = store.checkCooldown(interaction.user.id, 'work');
-    
-    if (!cooldownCheck.canUse) {
-      await interaction.reply({ content: `⏰ Bạn cần chờ ${cooldownCheck.remainingMinutes} phút nữa mới có thể làm việc.`, ephemeral: true });
-      return;
-    }
-    
-    const user = store.getUser(interaction.user.id);
-    
-    // Tính reward: 100-999 V + level bonus
-    const baseReward = 100 + Math.floor(Math.random() * 900); // 100-999
-    const levelBonus = user.level * 5; // +5 V per level
-    const totalReward = baseReward + levelBonus;
-    
-    // Áp dụng guild rank buff
-    const userGuild = store.getUserGuild(interaction.user.id);
-    let finalReward = totalReward;
-    if (userGuild) {
-      const buffs = store.getGuildRankBuffs(userGuild.guildRank.level);
-      const bonus = Math.floor(totalReward * buffs.incomeBonus / 100);
-      finalReward += bonus;
-    }
-    
-    user.balance += finalReward;
-    store.setCooldown(interaction.user.id, 'work', 60); // 1 giờ = 60 phút
-    
-    // Cộng XP
-    const xpResult = store.addXP(interaction.user.id, 10);
-    store.save();
-    
-    const embed = new EmbedBuilder()
-      .setTitle('💼 Làm Việc')
-      .setColor('#1a237e')
-      .addFields(
-        { name: '💰 Thu nhập', value: `${finalReward} V`, inline: true },
-        { name: '📊 Chi tiết', value: `Cơ bản: ${baseReward} V\nLevel bonus: +${levelBonus} V`, inline: true },
-        { name: '⏰ Cooldown', value: '1 giờ', inline: true }
-      )
-      .setTimestamp();
-    
-    if (userGuild) {
-      const buffs = store.getGuildRankBuffs(userGuild.guildRank.level);
-      embed.addFields({ name: '🏆 Guild Bonus', value: `+${buffs.incomeBonus}% thu nhập`, inline: false });
-    }
-    
-    embed.addFields({ name: '🎯 XP', value: xpResult.message, inline: false });
-    
-    await interaction.reply({ embeds: [embed] });
-  }
-};
+function balanceRank(bal: number): string {
+  if (bal >= 1_000_000) return '👑 Đại gia';
+  if (bal >= 500_000) return '💎 Phú gia';
+  if (bal >= 100_000) return '🏆 Thương gia';
+  if (bal >= 50_000) return '💼 Tiểu thương';
+  if (bal >= 10_000) return '🪙 Có của';
+  return '🌾 Thường dân';
+}
 
-
-// /daily - Slash command handler
-export const slashDaily: SlashCommand = {
-  data: new SlashCommandBuilder()
-    .setName('daily')
-    .setDescription('Nhận thưởng hàng ngày (cooldown 24 giờ)'),
-  async execute(interaction) {
-    const store = getStore();
-    const cooldownCheck = store.checkCooldown(interaction.user.id, 'daily');
-    
-    if (!cooldownCheck.canUse) {
-      const hours = Math.floor(cooldownCheck.remainingMinutes / 60);
-      const minutes = cooldownCheck.remainingMinutes % 60;
-      await interaction.reply({ content: `⏰ Bạn cần chờ ${hours} giờ ${minutes} phút nữa mới có thể nhận daily.`, ephemeral: true });
-      return;
-    }
-    
-    const user = store.getUser(interaction.user.id);
-    
-    // Streak system: consecutive days increase reward
-    const now = new Date();
-    const today = now.toDateString();
-    const lastDaily = user.lastDaily || '';
-    
-    let streak = user.dailyStreak || 0;
-    if (lastDaily === today) {
-      await interaction.reply({ content: 'Bạn đã nhận daily hôm nay rồi!', ephemeral: true });
-      return;
-    }
-    
-    // Reset streak if not consecutive
-    if (lastDaily && lastDaily !== today) {
-      const lastDate = new Date(lastDaily);
-      const daysDiff = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
-      if (daysDiff > 1) {
-        streak = 0; // Reset streak if missed a day
-      }
-    }
-    
-    streak += 1;
-    user.dailyStreak = streak;
-    user.lastDaily = today;
-    
-    // Base reward: 500 V + (streak * 50) bonus
-    const baseReward = 500;
-    const streakBonus = streak * 50;
-    const totalReward = baseReward + streakBonus;
-    
-    // Áp dụng guild rank buff
-    const userGuild = store.getUserGuild(interaction.user.id);
-    let finalReward = totalReward;
-    if (userGuild) {
-      const buffs = store.getGuildRankBuffs(userGuild.guildRank.level);
-      const bonus = Math.floor(totalReward * buffs.incomeBonus / 100);
-      finalReward += bonus;
-    }
-    
-    user.balance += finalReward;
-    store.setCooldown(interaction.user.id, 'daily', 1440); // 24 hours = 1440 minutes
-    
-    // Cộng XP
-    const xpResult = store.addXP(interaction.user.id, 25);
-    store.save();
-    
-    const embed = new EmbedBuilder()
-      .setTitle('🎁 Daily Reward')
-      .setColor('#1a237e')
-      .addFields(
-        { name: '💰 Phần thưởng', value: `${finalReward} V`, inline: true },
-        { name: '🔥 Streak', value: `${streak} ngày liên tiếp`, inline: true },
-        { name: '⏰ Cooldown', value: '24 giờ', inline: true }
-      )
-      .setTimestamp();
-    
-    if (userGuild) {
-      const buffs = store.getGuildRankBuffs(userGuild.guildRank.level);
-      embed.addFields({ name: '🏆 Guild Bonus', value: `+${buffs.incomeBonus}% thu nhập`, inline: false });
-    }
-    
-    embed.addFields({ name: '🎯 XP', value: xpResult.message, inline: false });
-    
-    await interaction.reply({ embeds: [embed] });
-  }
-};
-
-
-// /weekly - Slash command handler
-export const slashWeekly: SlashCommand = {
-  data: new SlashCommandBuilder()
-    .setName('weekly')
-    .setDescription('Nhận quà hàng tuần (cooldown 7 ngày)'),
-  async execute(interaction) {
-    const store = getStore();
-    const cooldownCheck = store.checkCooldown(interaction.user.id, 'weekly');
-    
-    if (!cooldownCheck.canUse) {
-      const days = Math.floor(cooldownCheck.remainingMinutes / 1440);
-      const hours = Math.floor((cooldownCheck.remainingMinutes % 1440) / 60);
-      await interaction.reply({ content: `⏰ Bạn cần chờ ${days} ngày ${hours} giờ nữa mới có thể nhận quà tuần.`, ephemeral: true });
-      return;
-    }
-    
-    const user = store.getUser(interaction.user.id);
-    
-    // Reward: 1000-5000 V dựa trên level
-    const baseReward = 1000 + (user.level * 200);
-    const randomBonus = Math.floor(Math.random() * 1000);
-    const totalReward = baseReward + randomBonus;
-    
-    // Áp dụng guild rank buff
-    const userGuild = store.getUserGuild(interaction.user.id);
-    let finalReward = totalReward;
-    if (userGuild) {
-      const buffs = store.getGuildRankBuffs(userGuild.guildRank.level);
-      const bonus = Math.floor(totalReward * buffs.incomeBonus / 100);
-      finalReward += bonus;
-    }
-    
-    user.balance += finalReward;
-    store.setCooldown(interaction.user.id, 'weekly', 10080); // 7 days in minutes
-    
-    // Cộng XP
-    const xpResult = store.addXP(interaction.user.id, 50);
-    store.save();
-    
-    const embed = new EmbedBuilder()
-      .setTitle('🎁 Quà Hàng Tuần')
-      .setColor('#1a237e')
-      .addFields(
-        { name: '💰 Phần thưởng', value: `${finalReward} V`, inline: true },
-        { name: '📊 Chi tiết', value: `Cơ bản: ${baseReward} V\nBonus: +${randomBonus} V`, inline: true },
-        { name: '⏰ Cooldown', value: '7 ngày', inline: true }
-      )
-      .setTimestamp();
-    
-    if (userGuild) {
-      const buffs = store.getGuildRankBuffs(userGuild.guildRank.level);
-      embed.addFields({ name: '🏆 Guild Bonus', value: `+${buffs.incomeBonus}% thu nhập`, inline: false });
-    }
-    
-    embed.addFields({ name: '🎯 XP', value: xpResult.message, inline: false });
-    
-    await interaction.reply({ embeds: [embed] });
-  }
-};
-
-
-// /cash - Slash command handler
-export const slashCash: SlashCommand = {
-  data: new SlashCommandBuilder()
-    .setName('cash')
-    .setDescription('Xem số dư V hiện tại'),
-  async execute(interaction) {
-    const store = getStore();
-    const user = store.getUser(interaction.user.id);
-    const userGuild = store.getUserGuild(interaction.user.id);
-    
-    // Tính rank dựa trên balance
-    let rank = 'Thường dân';
-    if (user.balance >= 1000000) rank = 'Đại gia';
-    else if (user.balance >= 500000) rank = 'Phú gia';
-    else if (user.balance >= 100000) rank = 'Thương gia';
-    else if (user.balance >= 50000) rank = 'Tiểu thương';
-    else if (user.balance >= 10000) rank = 'Có tiền';
-    
-    const embed = new EmbedBuilder()
-      .setTitle('💰 Số Dư')
-      .setColor('#1a237e')
-      .addFields(
-        { name: '💵 Số dư', value: `${user.balance.toLocaleString()} V`, inline: true },
-        { name: '🏆 Hạng', value: rank, inline: true },
-        { name: '🎯 Level', value: `${user.level}`, inline: true }
-      )
-      .setTimestamp();
-    
-    if (userGuild) {
-      embed.addFields({ 
-        name: '🏰 Guild', 
-        value: `${userGuild.name} (Hạng ${userGuild.guildRank.level})`, 
-        inline: false 
-      });
-    }
-    
-    await interaction.reply({ embeds: [embed] });
-  }
-};
-
-
-// /profile - Slash command handler
-export const slashProfile: SlashCommand = {
-  data: new SlashCommandBuilder()
-    .setName('profile')
-    .setDescription('Xem profile đầy đủ của user')
-    .addUserOption(option => 
-      option.setName('user')
-        .setDescription('User để xem profile (để trống để xem của mình)')
-        .setRequired(false)
-    ),
-  async execute(interaction) {
-    const target = interaction.options.getUser('user') || interaction.user;
-    const store = getStore();
-    const user = store.getUser(target.id);
-    const userGuild = store.getUserGuild(target.id);
-    
-    // Tính thời gian còn lại cho hatchery
-    let hatcheryStatus = 'Không có trứng đang ấp';
-    if (user.hatchery.plantedEgg.type) {
-      const now = Date.now();
-      if (now < user.hatchery.plantedEgg.harvestAt!) {
-        const remainingMs = user.hatchery.plantedEgg.harvestAt! - now;
-        hatcheryStatus = `🥚 Đang ấp ${user.hatchery.plantedEgg.type} (còn ${Math.ceil(remainingMs / 60000)} phút)`;
-      } else {
-        hatcheryStatus = `🐉 ${user.hatchery.plantedEgg.type} đã nở, có thể thu thập!`;
-      }
-    }
-    
-    // Tính XP cần để level up
-    const nextLevel = user.level + 1;
-    const xpNeeded = Math.pow(nextLevel, 2) * 100;
-    const xpProgress = user.xp;
-    const xpToNext = xpNeeded - xpProgress;
-    
-    const embed = new EmbedBuilder()
-      .setTitle(`👤 Profile: ${target.displayName || target.username}`)
-      .setColor('#1a237e')
-      .setThumbnail(target.displayAvatarURL())
-      .addFields(
-        { name: '💰 Số dư', value: `${user.balance.toLocaleString()} V`, inline: true },
-        { name: '🎯 Level', value: `${user.level}`, inline: true },
-        { name: '⭐ XP', value: `${user.xp} (cần ${xpToNext} để lên level ${nextLevel})`, inline: true },
-        { name: '🥚 Trại Level', value: `${user.hatchery.level}`, inline: true },
-        { name: '🐉 Trạng thái Trại', value: hatcheryStatus, inline: false },
-        { name: '⚔️ Vũ khí', value: user.equippedItems.weapon || 'Không có', inline: true },
-        { name: '🔮 Phù chú', value: user.equippedItems.phuChu || 'Không có', inline: true },
-        { name: '💊 Linh đan', value: user.equippedItems.linhDan || 'Không có', inline: true }
-      )
-      .setTimestamp();
-    
-    if (userGuild) {
-      const buffs = store.getGuildRankBuffs(userGuild.guildRank.level);
-      embed.addFields({ 
-        name: '🏰 Guild & Buffs', 
-        value: `Guild: ${userGuild.name}\n🏆 Guild Hạng ${userGuild.guildRank.level}\n• Thu nhập: +${buffs.incomeBonus}%\n• Cooldown: -${buffs.cooldownReduction}%\n• XP: +${buffs.xpBonus}%`, 
-        inline: false 
-      });
-    }
-    
-    await interaction.reply({ embeds: [embed] });
-  }
-};
-
-
-// /give - Slash command handler
-export const slashGive: SlashCommand = {
-  data: new SlashCommandBuilder()
-    .setName('give')
-    .setDescription('Chuyển V cho người khác')
-    .addUserOption(option => 
-      option.setName('user')
-        .setDescription('Người nhận V')
-        .setRequired(true)
+// ---------------- Hành động dùng chung ----------------
+function actWork(userId: string, gid: string | null): R {
+  const cd = store.checkCooldown(userId, 'work');
+  if (!cd.canUse) return { ok: false, embed: ui.warn(`${getIcon(gid, 'cooldown')} Cần chờ **${cd.remainingMinutes} phút** nữa mới làm việc tiếp.`).setTitle('💼 Làm Việc') };
+  const user = store.getUser(userId);
+  const base = 100 + Math.floor(Math.random() * 900);
+  const levelBonus = user.level * 5;
+  const gb = guildBonus(userId, base + levelBonus);
+  user.balance += gb.final;
+  store.setCooldown(userId, 'work', 60);
+  const xp = store.addXP(userId, 10);
+  store.save();
+  return {
+    ok: true,
+    embed: ui.ok('💼 Làm Việc').addFields(
+      { name: `${getIcon(gid, 'money')} Thu nhập`, value: ui.fmtV(gb.final), inline: true },
+      { name: '📊 Chi tiết', value: `Cơ bản ${ui.fmtNum(base)} · Lv +${levelBonus}${gb.pct ? ` · Guild +${gb.pct}%` : ''}`, inline: true },
+      { name: `${getIcon(gid, 'cooldown')} Hồi`, value: '1 giờ', inline: true },
+      { name: `${getIcon(gid, 'xp')} Kinh nghiệm`, value: xp.message, inline: false }
     )
-    .addIntegerOption(option => 
-      option.setName('amount')
-        .setDescription('Số V muốn chuyển')
-        .setRequired(true)
-        .setMinValue(1)
-    ),
-  async execute(interaction) {
-    const target = interaction.options.getUser('user')!;
-    const amount = interaction.options.getInteger('amount')!;
-    
-    if (target.id === interaction.user.id) {
-      await interaction.reply({ content: 'Bạn không thể chuyển tiền cho chính mình!', ephemeral: true });
-      return;
-    }
-    
-    const store = getStore();
-    const user = store.getUser(interaction.user.id);
-    const targetUser = store.getUser(target.id);
-    
-    if (user.balance < amount) {
-      await interaction.reply({ content: 'Không đủ V để chuyển!', ephemeral: true });
-      return;
-    }
-    
-    // Transfer money
-    user.balance -= amount;
-    targetUser.balance += amount;
-    store.save();
-    
-    const embed = new EmbedBuilder()
-      .setTitle('💸 Chuyển Tiền')
-      .setColor('#1a237e')
-      .addFields(
-        { name: '👤 Người gửi', value: `${interaction.user.displayName || interaction.user.username}`, inline: true },
-        { name: '👤 Người nhận', value: `${target.displayName || target.username}`, inline: true },
-        { name: '💰 Số tiền', value: `${amount.toLocaleString()} V`, inline: true },
-        { name: '💵 Số dư còn lại', value: `${user.balance.toLocaleString()} V`, inline: true }
-      )
-      .setTimestamp();
-    
-    await interaction.reply({ embeds: [embed] });
+  };
+}
+
+function actDaily(userId: string, gid: string | null): R {
+  const cd = store.checkCooldown(userId, 'daily');
+  if (!cd.canUse) {
+    const h = Math.floor(cd.remainingMinutes / 60), m = cd.remainingMinutes % 60;
+    return { ok: false, embed: ui.warn(`${getIcon(gid, 'cooldown')} Cần chờ **${h} giờ ${m} phút** nữa mới nhận daily.`).setTitle('🎁 Daily') };
   }
+  const user = store.getUser(userId);
+  const now = new Date();
+  const today = now.toDateString();
+  if (user.lastDaily === today) return { ok: false, embed: ui.warn('Bạn đã nhận daily hôm nay rồi!').setTitle('🎁 Daily') };
+  let streak = user.dailyStreak || 0;
+  if (user.lastDaily) {
+    const diff = Math.floor((now.getTime() - new Date(user.lastDaily).getTime()) / 86400000);
+    if (diff > 1) streak = 0;
+  }
+  streak += 1;
+  user.dailyStreak = streak;
+  user.lastDaily = today;
+  const gb = guildBonus(userId, 500 + streak * 50);
+  user.balance += gb.final;
+  store.setCooldown(userId, 'daily', 1440);
+  const xp = store.addXP(userId, 25);
+  store.save();
+  return {
+    ok: true,
+    embed: ui.ok(`${getIcon(gid, 'gift')} Quà Hàng Ngày`).setColor(ui.COLORS.gold).addFields(
+      { name: `${getIcon(gid, 'money')} Phần thưởng`, value: ui.fmtV(gb.final), inline: true },
+      { name: '🔥 Chuỗi ngày', value: `${streak} ngày${gb.pct ? ` · Guild +${gb.pct}%` : ''}`, inline: true },
+      { name: `${getIcon(gid, 'cooldown')} Hồi`, value: '24 giờ', inline: true },
+      { name: `${getIcon(gid, 'xp')} Kinh nghiệm`, value: xp.message, inline: false }
+    )
+  };
+}
+
+function actWeekly(userId: string, gid: string | null): R {
+  const cd = store.checkCooldown(userId, 'weekly');
+  if (!cd.canUse) {
+    const d = Math.floor(cd.remainingMinutes / 1440), h = Math.floor((cd.remainingMinutes % 1440) / 60);
+    return { ok: false, embed: ui.warn(`${getIcon(gid, 'cooldown')} Cần chờ **${d} ngày ${h} giờ** nữa mới nhận quà tuần.`).setTitle('🎁 Quà Tuần') };
+  }
+  const user = store.getUser(userId);
+  const base = 1000 + user.level * 200;
+  const rbonus = Math.floor(Math.random() * 1000);
+  const gb = guildBonus(userId, base + rbonus);
+  user.balance += gb.final;
+  store.setCooldown(userId, 'weekly', 10080);
+  const xp = store.addXP(userId, 50);
+  store.save();
+  return {
+    ok: true,
+    embed: ui.ok(`${getIcon(gid, 'gift')} Quà Hàng Tuần`).setColor(ui.COLORS.gold).addFields(
+      { name: `${getIcon(gid, 'money')} Phần thưởng`, value: ui.fmtV(gb.final), inline: true },
+      { name: '📊 Chi tiết', value: `Cơ bản ${ui.fmtNum(base)} · Bonus +${ui.fmtNum(rbonus)}${gb.pct ? ` · Guild +${gb.pct}%` : ''}`, inline: true },
+      { name: `${getIcon(gid, 'cooldown')} Hồi`, value: '7 ngày', inline: true },
+      { name: `${getIcon(gid, 'xp')} Kinh nghiệm`, value: xp.message, inline: false }
+    )
+  };
+}
+
+function actBet(userId: string, rawAmount: number, gid: string | null): R {
+  const amount = Math.floor(rawAmount);
+  if (!Number.isFinite(amount) || amount < 10) return { ok: false, embed: ui.err('Cược tối thiểu 10 V (số nguyên).') };
+  const user = store.getUser(userId);
+  if (user.balance < amount) return { ok: false, embed: ui.err('Bạn không đủ V để cược.') };
+  user.balance -= amount;
+  const won = Math.random() < 0.5;
+  const winnings = won ? Math.floor(amount * 1.8) : 0;
+  user.balance += winnings;
+  store.save();
+  const profit = winnings - amount;
+  return {
+    ok: true,
+    embed: ui.baseEmbed().setColor(won ? ui.COLORS.success : ui.COLORS.danger).setTitle('🎲 Đặt Cược 50/50')
+      .setDescription(won ? '🎉 **THẮNG!**' : '💥 **THUA!**')
+      .addFields(
+        { name: '💵 Cược', value: ui.fmtV(amount), inline: true },
+        { name: '📈 Lãi/Lỗ', value: ui.fmtDelta(profit), inline: true },
+        { name: `${getIcon(gid, 'money')} Số dư`, value: ui.fmtV(user.balance), inline: true }
+      )
+  };
+}
+
+function actCash(userId: string, gid: string | null): R {
+  const user = store.getUser(userId);
+  const g = store.getUserGuild(userId);
+  const e = ui.brand(`${getIcon(gid, 'money')} Ví Của Bạn`).addFields(
+    { name: '💵 Số dư', value: ui.fmtV(user.balance), inline: true },
+    { name: '🏅 Hạng của cải', value: balanceRank(user.balance), inline: true },
+    { name: '⭐ Level', value: `${user.level}`, inline: true }
+  );
+  if (g) e.addFields({ name: '🏰 Guild', value: `${g.name} · Hạng ${g.guildRank.level}`, inline: false });
+  return { ok: true, embed: e };
+}
+
+const WEAPON_NAME: Record<string, string> = {
+  kiem_go: 'Kiếm Gỗ', kiem_sat: 'Kiếm Sắt', kiem_bac: 'Kiếm Bạc',
+  kiem_vang: 'Kiếm Vàng', kiem_than: 'Kiếm Thần', dep_to_ong: '🏆 Dép Tổ Ong'
 };
 
+// Tiến trình XP trong level hiện tại (level = floor(√(xp/100)) -> cần L²·100 XP để đạt level L)
+function xpProgress(level: number, xp: number) {
+  const cur = level <= 1 ? 0 : level * level * 100;
+  const next = (level + 1) * (level + 1) * 100;
+  const inLevel = Math.max(0, xp - cur);
+  const span = Math.max(1, next - cur);
+  const pct = Math.min(100, Math.round((inLevel / span) * 100));
+  return { inLevel, span, pct, remain: Math.max(0, span - inLevel), bar: ui.bar(inLevel, span, 16) };
+}
 
-// /bet - Slash command handler
+function actProfile(target: User, gid: string | null): R {
+  const user = store.getUser(target.id);
+  const g = store.getUserGuild(target.id);
+  const xp = xpProgress(user.level, user.xp);
+
+  let hatch = 'Trống';
+  const p = user.hatchery.plantedEgg;
+  if (p?.type) {
+    hatch = Date.now() < (p.harvestAt ?? 0)
+      ? `🥚 ${p.type} · còn ${Math.ceil(((p.harvestAt ?? 0) - Date.now()) / 60000)}′`
+      : `🐉 ${p.type} đã nở!`;
+  }
+
+  const weapon = user.equippedItems.weapon ? (WEAPON_NAME[user.equippedItems.weapon] || user.equippedItems.weapon) : '—';
+  const ds = user.dungeonStats;
+  const petCount = Object.values(user.categorizedInventory.pets).reduce((a, b) => a + b, 0);
+  // forceStatic: true -> ép PNG tĩnh (avatar động .gif không render trong thumbnail embed)
+  const avatar = target.displayAvatarURL({ extension: 'png', forceStatic: true, size: 256 });
+
+  const rb = store.getShopRoleBuffs(target.id);
+  const buffLines: string[] = [];
+  if (rb.huntSuccess) buffLines.push(`+${rb.huntSuccess}% săn`);
+  if (rb.dungeonDamagePct) buffLines.push(`+${rb.dungeonDamagePct}% sát thương ải`);
+  if (rb.hatchTimeMult < 1) buffLines.push(`−${Math.round((1 - rb.hatchTimeMult) * 100)}% ấp`);
+
+  const e = ui.baseEmbed()
+    .setAuthor({ name: `${target.displayName || target.username} · ${balanceRank(user.balance)}`, iconURL: avatar })
+    .setThumbnail(avatar)
+    .setTitle(`${getIcon(gid, 'level')} Level ${user.level}`)
+    .setDescription(
+      `\`${xp.bar}\` **${xp.pct}%**\n` +
+      `${getIcon(gid, 'xp')} **${ui.fmtNum(xp.inLevel)} / ${ui.fmtNum(xp.span)} XP** — còn ${ui.fmtNum(xp.remain)} để lên **Lv${user.level + 1}**`
+    )
+    // inline: true -> các ô xếp thành HÀNG NGANG (3 ô/hàng) cho gọn, không dồn một cột
+    .addFields(
+      { name: `${getIcon(gid, 'money')} Số dư`, value: ui.fmtV(user.balance), inline: true },
+      { name: `${getIcon(gid, 'sword')} Vũ khí`, value: weapon, inline: true },
+      { name: `${getIcon(gid, 'egg')} Trại ấp`, value: `Lv${user.hatchery.level} · ${hatch}`, inline: true },
+      { name: '🐉 Thần thú', value: `${petCount}`, inline: true },
+      { name: `${getIcon(gid, 'trophy')} Ải`, value: ds?.totalClears ? `${ds.totalClears} lần · ${ds.successRate || 0}%` : '—', inline: true },
+      { name: '🎭 Chức nghiệp', value: buffLines.join(' · ') || '—', inline: true }
+    );
+
+  if (g) {
+    const b = store.getGuildRankBuffs(g.guildRank.level);
+    e.addFields({ name: '🏰 Guild', value: `**${g.name}** · Hạng ${g.guildRank.level} · +${b.incomeBonus}% thu nhập · −${b.cooldownReduction}% hồi · +${b.xpBonus}% XP`, inline: false });
+  }
+  return { ok: true, embed: e };
+}
+
+function actInventory(userId: string, gid: string | null): R {
+  const inv = store.getUser(userId).categorizedInventory;
+  const fmt = (items: Record<string, number>) => {
+    const en = Object.entries(items);
+    return en.length ? en.map(([k, v]) => `\`${k}\` ×${v}`).join('\n') : '—';
+  };
+  return {
+    ok: true,
+    embed: ui.brand(`${getIcon(gid, 'bag')} Túi Đồ`).setColor(0x8b5a2b).addFields(
+      { name: `${getIcon(gid, 'egg')} Trứng`, value: fmt(inv.eggs), inline: true },
+      { name: '🐉 Thần thú', value: fmt(inv.pets), inline: true },
+      { name: '⚔️ Vũ khí', value: fmt(inv.weapons), inline: true },
+      { name: '👻 Linh hồn', value: fmt(inv.monsterItems), inline: true },
+      { name: '🔮 Phù chú/Đan', value: fmt(inv.dungeonGear), inline: true },
+      { name: '💎 Chiến lợi', value: fmt(inv.dungeonLoot), inline: true },
+      { name: '📦 Khác', value: fmt(inv.misc), inline: false }
+    )
+  };
+}
+
+function actLeaderboard(viewerId: string, gid: string | null): R {
+  const users = store.getAllUsers().slice().sort((a, b) => b.balance - a.balance);
+  const top = users.slice(0, 10);
+  const medal = (i: number) => ['🥇', '🥈', '🥉'][i] || `\`${i + 1}.\``;
+  const desc = top.map((u, i) => `${medal(i)} <@${u.userId}> — **${ui.fmtV(u.balance)}**`).join('\n');
+  const e = ui.brand(`${getIcon(gid, 'trophy')} Bảng Xếp Hạng Giàu Có`, desc || 'Chưa có dữ liệu.').setColor(ui.COLORS.gold);
+  const rank = users.findIndex((u) => u.userId === viewerId) + 1;
+  if (rank > 0) e.setFooter({ text: `VIE · Vị trí của bạn: #${rank}` });
+  return { ok: true, embed: e };
+}
+
+function actGive(fromId: string, targetId: string, amount: number): R {
+  if (targetId === fromId) return { ok: false, embed: ui.err('Không thể chuyển V cho chính mình.') };
+  const amt = Math.floor(amount);
+  if (!Number.isFinite(amt) || amt <= 0) return { ok: false, embed: ui.err('Số tiền không hợp lệ.') };
+  const from = store.getUser(fromId);
+  if (from.balance < amt) return { ok: false, embed: ui.err('Bạn không đủ V để chuyển.') };
+  from.balance -= amt;
+  store.getUser(targetId).balance += amt;
+  store.save();
+  return {
+    ok: true,
+    embed: ui.ok('💸 Chuyển Tiền', `Đã chuyển **${ui.fmtV(amt)}** cho <@${targetId}>.`)
+      .addFields({ name: '💵 Số dư còn lại', value: ui.fmtV(from.balance), inline: true })
+  };
+}
+
+// ---------------- SLASH ----------------
+async function slashRun(interaction: any, r: R) {
+  await interaction.reply({ embeds: [r.embed], ephemeral: !r.ok });
+}
+
+export const slashWork: SlashCommand = { data: new SlashCommandBuilder().setName('work').setDescription('Làm việc kiếm V (hồi 1 giờ)'), async execute(i) { await slashRun(i, actWork(i.user.id, i.guildId)); } };
+export const slashDaily: SlashCommand = { data: new SlashCommandBuilder().setName('daily').setDescription('Nhận quà hàng ngày'), async execute(i) { await slashRun(i, actDaily(i.user.id, i.guildId)); } };
+export const slashWeekly: SlashCommand = { data: new SlashCommandBuilder().setName('weekly').setDescription('Nhận quà hàng tuần'), async execute(i) { await slashRun(i, actWeekly(i.user.id, i.guildId)); } };
+export const slashCash: SlashCommand = { data: new SlashCommandBuilder().setName('cash').setDescription('Xem số dư V'), async execute(i) { await slashRun(i, actCash(i.user.id, i.guildId)); } };
+export const slashInventory: SlashCommand = { data: new SlashCommandBuilder().setName('inventory').setDescription('Xem túi đồ'), async execute(i) { await slashRun(i, actInventory(i.user.id, i.guildId)); } };
+export const slashLeaderboard: SlashCommand = { data: new SlashCommandBuilder().setName('leaderboard').setDescription('BXH giàu có'), async execute(i) { await slashRun(i, actLeaderboard(i.user.id, i.guildId)); } };
 export const slashBet: SlashCommand = {
-  data: new SlashCommandBuilder()
-    .setName('bet')
-    .setDescription('Đặt cược may rủi 50/50')
-    .addIntegerOption(option => 
-      option.setName('amount')
-        .setDescription('Số V muốn đặt cược')
-        .setRequired(true)
-        .setMinValue(10)
-    ),
-  async execute(interaction) {
-    const amount = interaction.options.getInteger('amount')!;
-    
-    const store = getStore();
-    const user = store.getUser(interaction.user.id);
-    
-    if (user.balance < amount) {
-      await interaction.reply({ content: 'Không đủ tiền để đặt cược!', ephemeral: true });
-      return;
-    }
-    
-    // Trừ tiền trước
-    user.balance -= amount;
-    
-    // 50/50 chance
-    const won = Math.random() < 0.5;
-    const winnings = won ? Math.floor(amount * 1.8) : 0; // 80% return if win
-    user.balance += winnings;
-    store.save();
-    
-    const embed = new EmbedBuilder()
-      .setTitle('🎲 Đặt Cược')
-      .setColor(won ? '#1a237e' : '#ff6f00')
-      .addFields(
-        { name: '💰 Cược', value: `${amount} V`, inline: true },
-        { name: '🎯 Kết quả', value: won ? 'Thắng!' : 'Thua!', inline: true },
-        { name: '💵 Thắng được', value: `${winnings} V`, inline: true }
-      )
-      .setTimestamp();
-    
-    await interaction.reply({ embeds: [embed] });
-  }
+  data: new SlashCommandBuilder().setName('bet').setDescription('Cược may rủi 50/50').addIntegerOption((o) => o.setName('amount').setDescription('Số V cược').setRequired(true).setMinValue(10)),
+  async execute(i) { await slashRun(i, actBet(i.user.id, i.options.getInteger('amount', true), i.guildId)); }
+};
+export const slashProfile: SlashCommand = {
+  data: new SlashCommandBuilder().setName('profile').setDescription('Xem profile').addUserOption((o) => o.setName('user').setDescription('Người cần xem').setRequired(false)),
+  async execute(i) { await slashRun(i, actProfile(i.options.getUser('user') || i.user, i.guildId)); }
+};
+export const slashGive: SlashCommand = {
+  data: new SlashCommandBuilder().setName('give').setDescription('Chuyển V cho người khác')
+    .addUserOption((o) => o.setName('user').setDescription('Người nhận').setRequired(true))
+    .addIntegerOption((o) => o.setName('amount').setDescription('Số V').setRequired(true).setMinValue(1)),
+  async execute(i) { await slashRun(i, actGive(i.user.id, i.options.getUser('user', true).id, i.options.getInteger('amount', true))); }
 };
 
-
-// /inventory - Slash command handler
-export const slashInventory: SlashCommand = {
-  data: new SlashCommandBuilder()
-    .setName('inventory')
-    .setDescription('Xem túi đồ phân loại theo category'),
-  async execute(interaction) {
-    const store = getStore();
-    const user = store.getUser(interaction.user.id);
-    const inv = user.categorizedInventory;
-    
-    const formatItems = (items: Record<string, number>, emoji: string) => {
-      const entries = Object.entries(items);
-      if (entries.length === 0) return `${emoji} Trống`;
-      return entries.map(([item, qty]) => `${emoji} ${item}: ${qty}`).join('\n');
-    };
-    
-    const embed = new EmbedBuilder()
-      .setTitle('🎒 Túi Đồ')
-      .setColor('#8B4513')
-      .addFields(
-        { name: '🥚 Trứng thần', value: formatItems(inv.eggs, '🥚'), inline: true },
-        { name: '🐉 Thần thú', value: formatItems(inv.pets, '🐉'), inline: true },
-        { name: '⚔️ Vũ khí', value: formatItems(inv.weapons, '⚔️'), inline: true },
-        { name: '👻 Linh hồn', value: formatItems(inv.monsterItems, '👻'), inline: true },
-        { name: '🔮 Phù chú', value: formatItems(inv.dungeonGear, '🔮'), inline: true },
-        { name: '💎 Đồ ải', value: formatItems(inv.dungeonLoot, '💎'), inline: true },
-        { name: '📦 Khác', value: formatItems(inv.misc, '📦'), inline: true }
-      )
-      .setTimestamp();
-    
-    await interaction.reply({ embeds: [embed] });
-  }
-};
-
-
-// /leaderboard - Slash command handler
-export const slashLeaderboard: SlashCommand = {
-  data: new SlashCommandBuilder()
-    .setName('leaderboard')
-    .setDescription('Bảng xếp hạng top 10 người giàu nhất'),
-  async execute(interaction) {
-    const store = getStore();
-    const users = store.getAllUsers();
-    
-    // Sort by balance
-    const sortedUsers = users.sort((a, b) => b.balance - a.balance).slice(0, 10);
-    
-    const leaderboardText = sortedUsers.map((user, index) => {
-      const rank = index + 1;
-      const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}.`;
-      return `${medal} <@${user.userId}> - ${user.balance.toLocaleString()} V`;
-    }).join('\n');
-    
-    const currentUserRank = users.findIndex(u => u.userId === interaction.user.id) + 1;
-    const currentUser = store.getUser(interaction.user.id);
-    
-    const embed = new EmbedBuilder()
-      .setTitle('🏆 Bảng Xếp Hạng')
-      .setColor('#1a237e')
-      .setDescription(leaderboardText || 'Chưa có dữ liệu')
-      .setTimestamp();
-    
-    if (currentUserRank > 0) {
-      embed.addFields({
-        name: '📊 Vị trí của bạn',
-        value: `#${currentUserRank} - ${currentUser.balance.toLocaleString()} V`,
-        inline: false
-      });
-    }
-    
-    await interaction.reply({ embeds: [embed] });
-  }
-};
-
-export const prefixWork: PrefixCommand = {
-  name: 'work',
-  description: 'Làm việc kiếm V (cooldown 1 giờ)',
-  async execute(message) {
-    const store = getStore();
-    const cooldownCheck = store.checkCooldown(message.author.id, 'work');
-    
-    if (!cooldownCheck.canUse) {
-      await message.reply(`⏰ Bạn cần chờ ${cooldownCheck.remainingMinutes} phút nữa mới có thể làm việc.`);
-      return;
-    }
-    
-    const user = store.getUser(message.author.id);
-    
-    // Tính reward: 100-999 V + level bonus
-    const baseReward = 100 + Math.floor(Math.random() * 900); // 100-999
-    const levelBonus = user.level * 5; // +5 V per level
-    const totalReward = baseReward + levelBonus;
-    
-    // Áp dụng guild rank buff
-    const userGuild = store.getUserGuild(message.author.id);
-    let finalReward = totalReward;
-    if (userGuild) {
-      const buffs = store.getGuildRankBuffs(userGuild.guildRank.level);
-      const bonus = Math.floor(totalReward * buffs.incomeBonus / 100);
-      finalReward += bonus;
-    }
-    
-    user.balance += finalReward;
-    store.setCooldown(message.author.id, 'work', 60); // 1 giờ = 60 phút
-    
-    // Cộng XP
-    const xpResult = store.addXP(message.author.id, 10);
-    store.save();
-    
-    const embed = new EmbedBuilder()
-      .setTitle('💼 Làm Việc')
-      .setColor('#1a237e')
-      .addFields(
-        { name: '💰 Thu nhập', value: `${finalReward} V`, inline: true },
-        { name: '📊 Chi tiết', value: `Cơ bản: ${baseReward} V\nLevel bonus: +${levelBonus} V`, inline: true },
-        { name: '⏰ Cooldown', value: '1 giờ', inline: true }
-      )
-      .setTimestamp();
-    
-    if (userGuild) {
-      const buffs = store.getGuildRankBuffs(userGuild.guildRank.level);
-      embed.addFields({ name: '🏆 Guild Bonus', value: `+${buffs.incomeBonus}% thu nhập`, inline: false });
-    }
-    
-    embed.addFields({ name: '🎯 XP', value: xpResult.message, inline: false });
-    
-    await message.reply({ embeds: [embed] });
-  }
-};
-
-// v weekly - Quà hàng tuần
-export const prefixWeekly: PrefixCommand = {
-  name: 'weekly',
-  description: 'Nhận quà hàng tuần (cooldown 7 ngày)',
-  async execute(message) {
-    const store = getStore();
-    const cooldownCheck = store.checkCooldown(message.author.id, 'weekly');
-    
-    if (!cooldownCheck.canUse) {
-      const days = Math.floor(cooldownCheck.remainingMinutes / 1440);
-      const hours = Math.floor((cooldownCheck.remainingMinutes % 1440) / 60);
-      await message.reply(`⏰ Bạn cần chờ ${days} ngày ${hours} giờ nữa mới có thể nhận quà tuần.`);
-      return;
-    }
-    
-    const user = store.getUser(message.author.id);
-    
-    // Reward: 1000-5000 V dựa trên level
-    const baseReward = 1000 + (user.level * 200);
-    const randomBonus = Math.floor(Math.random() * 1000);
-    const totalReward = baseReward + randomBonus;
-    
-    // Áp dụng guild rank buff
-    const userGuild = store.getUserGuild(message.author.id);
-    let finalReward = totalReward;
-    if (userGuild) {
-      const buffs = store.getGuildRankBuffs(userGuild.guildRank.level);
-      const bonus = Math.floor(totalReward * buffs.incomeBonus / 100);
-      finalReward += bonus;
-    }
-    
-    user.balance += finalReward;
-    store.setCooldown(message.author.id, 'weekly', 10080); // 7 days in minutes
-    
-    // Cộng XP
-    const xpResult = store.addXP(message.author.id, 50);
-    store.save();
-    
-    const embed = new EmbedBuilder()
-      .setTitle('🎁 Quà Hàng Tuần')
-      .setColor('#1a237e')
-      .addFields(
-        { name: '💰 Phần thưởng', value: `${finalReward} V`, inline: true },
-        { name: '📊 Chi tiết', value: `Cơ bản: ${baseReward} V\nBonus: +${randomBonus} V`, inline: true },
-        { name: '⏰ Cooldown', value: '7 ngày', inline: true }
-      )
-      .setTimestamp();
-    
-    if (userGuild) {
-      const buffs = store.getGuildRankBuffs(userGuild.guildRank.level);
-      embed.addFields({ name: '🏆 Guild Bonus', value: `+${buffs.incomeBonus}% thu nhập`, inline: false });
-    }
-    
-    embed.addFields({ name: '🎯 XP', value: xpResult.message, inline: false });
-    
-    await message.reply({ embeds: [embed] });
-  }
-};
-
-// v bet <amount> - Đặt cược may rủi
+// ---------------- PREFIX ----------------
+export const prefixWork: PrefixCommand = { name: 'work', description: 'Làm việc kiếm V', async execute(m) { await m.reply({ embeds: [actWork(m.author.id, m.guildId).embed] }); } };
+export const prefixDaily: PrefixCommand = { name: 'daily', description: 'Quà hàng ngày', async execute(m) { await m.reply({ embeds: [actDaily(m.author.id, m.guildId).embed] }); } };
+export const prefixWeekly: PrefixCommand = { name: 'weekly', description: 'Quà hàng tuần', async execute(m) { await m.reply({ embeds: [actWeekly(m.author.id, m.guildId).embed] }); } };
+export const prefixCash: PrefixCommand = { name: 'cash', description: 'Xem số dư', async execute(m) { await m.reply({ embeds: [actCash(m.author.id, m.guildId).embed] }); } };
+export const prefixInventory: PrefixCommand = { name: 'inventory', description: 'Xem túi đồ', async execute(m) { await m.reply({ embeds: [actInventory(m.author.id, m.guildId).embed] }); } };
+export const prefixInv: PrefixCommand = { name: 'inv', description: 'Túi đồ (alias)', async execute(m) { await m.reply({ embeds: [actInventory(m.author.id, m.guildId).embed] }); } };
 export const prefixBet: PrefixCommand = {
-  name: 'bet',
-  description: 'Đặt cược may rủi 50/50',
-  async execute(message, args) {
-    const amount = Number(args[0]);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      await message.reply('Cú pháp: v bet <số tiền>');
-      return;
-    }
-    
-    const store = getStore();
-    const user = store.getUser(message.author.id);
-    
-    if (user.balance < amount) {
-      await message.reply('Không đủ tiền để đặt cược.');
-      return;
-    }
-    
-    // Trừ tiền trước
-    user.balance -= amount;
-    
-    // 50/50 chance
-    const won = Math.random() < 0.5;
-    const winnings = won ? Math.floor(amount * 1.8) : 0; // 80% return if win
-    user.balance += winnings;
-    store.save();
-    
-    const embed = new EmbedBuilder()
-      .setTitle('🎲 Đặt Cược')
-      .setColor(won ? '#1a237e' : '#ff6f00')
-      .addFields(
-        { name: '💰 Cược', value: `${amount} V`, inline: true },
-        { name: '🎯 Kết quả', value: won ? 'Thắng!' : 'Thua!', inline: true },
-        { name: '💵 Thắng được', value: `${winnings} V`, inline: true }
-      )
-      .setTimestamp();
-    
-    await message.reply({ embeds: [embed] });
-  }
+  name: 'bet', description: 'Cược 50/50: v bet <số tiền>',
+  async execute(m, args) { await m.reply({ embeds: [actBet(m.author.id, Number(args[0]), m.guildId).embed] }); }
 };
-
-// v profile [@user] - Xem profile đầy đủ
 export const prefixProfile: PrefixCommand = {
-  name: 'profile',
-  description: 'Xem profile đầy đủ của user',
-  async execute(message, args) {
-    const target = message.mentions.users.first() || message.author;
-    const store = getStore();
-    const user = store.getUser(target.id);
-    const userGuild = store.getUserGuild(target.id);
-    
-    // Tính thời gian còn lại cho hatchery
-    let hatcheryStatus = 'Không có trứng đang ấp';
-    if (user.hatchery.plantedEgg.type) {
-      const now = Date.now();
-      if (now < user.hatchery.plantedEgg.harvestAt!) {
-        const remainingMs = user.hatchery.plantedEgg.harvestAt! - now;
-        hatcheryStatus = `🥚 Đang ấp ${user.hatchery.plantedEgg.type} (còn ${Math.ceil(remainingMs / 60000)} phút)`;
-      } else {
-        hatcheryStatus = `🐉 ${user.hatchery.plantedEgg.type} đã nở, có thể thu thập!`;
-      }
-    }
-    
-    // Tính XP cần để level up
-    const nextLevel = user.level + 1;
-    const xpNeeded = Math.pow(nextLevel, 2) * 100;
-    const xpProgress = user.xp;
-    const xpToNext = xpNeeded - xpProgress;
-    
-    const embed = new EmbedBuilder()
-      .setTitle(`👤 Profile: ${target.displayName || target.username}`)
-      .setColor('#1a237e')
-      .setThumbnail(target.displayAvatarURL())
-      .addFields(
-        { name: '💰 Số dư', value: `${user.balance.toLocaleString()} V`, inline: true },
-        { name: '🎯 Level', value: `${user.level}`, inline: true },
-        { name: '⭐ XP', value: `${user.xp} (cần ${xpToNext} để lên level ${nextLevel})`, inline: true },
-        { name: '🥚 Trại Level', value: `${user.hatchery.level}`, inline: true },
-        { name: '🐉 Trạng thái Trại', value: hatcheryStatus, inline: false },
-        { name: '⚔️ Vũ khí', value: user.equippedItems.weapon || 'Không có', inline: true },
-        { name: '🔮 Phù chú', value: user.equippedItems.phuChu || 'Không có', inline: true },
-        { name: '💊 Linh đan', value: user.equippedItems.linhDan || 'Không có', inline: true }
-      )
-      .setTimestamp();
-    
-    if (userGuild) {
-      const buffs = store.getGuildRankBuffs(userGuild.guildRank.level);
-      embed.addFields({ 
-        name: '🏰 Guild & Buffs', 
-        value: `Guild: ${userGuild.name}\n🏆 Guild Hạng ${userGuild.guildRank.level}\n• Thu nhập: +${buffs.incomeBonus}%\n• Cooldown: -${buffs.cooldownReduction}%\n• XP: +${buffs.xpBonus}%`, 
-        inline: false 
-      });
-    }
-    
-    await message.reply({ embeds: [embed] });
-  }
-};
-
-// v inventory / v inv - Xem túi đồ phân loại
-export const prefixInventory: PrefixCommand = {
-  name: 'inventory',
-  description: 'Xem túi đồ phân loại theo category',
-  async execute(message) {
-    const store = getStore();
-    const user = store.getUser(message.author.id);
-    const inv = user.categorizedInventory;
-    
-    const formatItems = (items: Record<string, number>, emoji: string) => {
-      const entries = Object.entries(items);
-      if (entries.length === 0) return `${emoji} Trống`;
-      return entries.map(([item, qty]) => `${emoji} ${item}: ${qty}`).join('\n');
-    };
-    
-    const embed = new EmbedBuilder()
-      .setTitle('🎒 Túi Đồ')
-      .setColor('#8B4513')
-      .addFields(
-        { name: '🥚 Trứng thần', value: formatItems(inv.eggs, '🥚'), inline: true },
-        { name: '🐉 Thần thú', value: formatItems(inv.pets, '🐉'), inline: true },
-        { name: '⚔️ Vũ khí', value: formatItems(inv.weapons, '⚔️'), inline: true },
-        { name: '👻 Linh hồn', value: formatItems(inv.monsterItems, '👻'), inline: true },
-        { name: '🔮 Phù chú', value: formatItems(inv.dungeonGear, '🔮'), inline: true },
-        { name: '💎 Đồ ải', value: formatItems(inv.dungeonLoot, '💎'), inline: true },
-        { name: '📦 Khác', value: formatItems(inv.misc, '📦'), inline: true }
-      )
-      .setTimestamp();
-    
-    await message.reply({ embeds: [embed] });
-  }
-};
-
-// Alias cho inventory
-export const prefixInv: PrefixCommand = {
-  name: 'inv',
-  description: 'Xem túi đồ (alias của inventory)',
-  async execute(message) {
-    await prefixInventory.execute(message, []);
-  }
-};
-
-// v daily - Nhận thưởng hàng ngày
-export const prefixDaily: PrefixCommand = {
-  name: 'daily',
-  description: 'Nhận thưởng hàng ngày (cooldown 24 giờ)',
-  async execute(message) {
-    const store = getStore();
-    const cooldownCheck = store.checkCooldown(message.author.id, 'daily');
-    
-    if (!cooldownCheck.canUse) {
-      const hours = Math.floor(cooldownCheck.remainingMinutes / 60);
-      const minutes = cooldownCheck.remainingMinutes % 60;
-      await message.reply(`⏰ Bạn cần chờ ${hours} giờ ${minutes} phút nữa mới có thể nhận daily.`);
-      return;
-    }
-    
-    const user = store.getUser(message.author.id);
-    
-    // Streak system: consecutive days increase reward
-    const now = new Date();
-    const today = now.toDateString();
-    const lastDaily = user.lastDaily || '';
-    
-    let streak = user.dailyStreak || 0;
-    if (lastDaily === today) {
-      await message.reply('Bạn đã nhận daily hôm nay rồi!');
-      return;
-    }
-    
-    // Reset streak if not consecutive
-    if (lastDaily && lastDaily !== today) {
-      const lastDate = new Date(lastDaily);
-      const daysDiff = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
-      if (daysDiff > 1) {
-        streak = 0; // Reset streak if missed a day
-      }
-    }
-    
-    streak += 1;
-    user.dailyStreak = streak;
-    user.lastDaily = today;
-    
-    // Base reward: 500 V + (streak * 50) bonus
-    const baseReward = 500;
-    const streakBonus = streak * 50;
-    const totalReward = baseReward + streakBonus;
-    
-    // Áp dụng guild rank buff
-    const userGuild = store.getUserGuild(message.author.id);
-    let finalReward = totalReward;
-    if (userGuild) {
-      const buffs = store.getGuildRankBuffs(userGuild.guildRank.level);
-      const bonus = Math.floor(totalReward * buffs.incomeBonus / 100);
-      finalReward += bonus;
-    }
-    
-    user.balance += finalReward;
-    store.setCooldown(message.author.id, 'daily', 1440); // 24 hours = 1440 minutes
-    
-    // Cộng XP
-    const xpResult = store.addXP(message.author.id, 25);
-    store.save();
-    
-    const embed = new EmbedBuilder()
-      .setTitle('🎁 Daily Reward')
-      .setColor('#1a237e')
-      .addFields(
-        { name: '💰 Phần thưởng', value: `${finalReward} V`, inline: true },
-        { name: '🔥 Streak', value: `${streak} ngày liên tiếp`, inline: true },
-        { name: '⏰ Cooldown', value: '24 giờ', inline: true }
-      )
-      .setTimestamp();
-    
-    if (userGuild) {
-      const buffs = store.getGuildRankBuffs(userGuild.guildRank.level);
-      embed.addFields({ name: '🏆 Guild Bonus', value: `+${buffs.incomeBonus}% thu nhập`, inline: false });
-    }
-    
-    embed.addFields({ name: '🎯 XP', value: xpResult.message, inline: false });
-    
-    await message.reply({ embeds: [embed] });
-  }
-};
-
-// v cash - Xem số dư
-export const prefixCash: PrefixCommand = {
-  name: 'cash',
-  description: 'Xem số dư V hiện tại',
-  async execute(message) {
-    const store = getStore();
-    const user = store.getUser(message.author.id);
-    const userGuild = store.getUserGuild(message.author.id);
-    
-    // Tính rank dựa trên balance
-    let rank = 'Thường dân';
-    if (user.balance >= 1000000) rank = 'Đại gia';
-    else if (user.balance >= 500000) rank = 'Phú gia';
-    else if (user.balance >= 100000) rank = 'Thương gia';
-    else if (user.balance >= 50000) rank = 'Tiểu thương';
-    else if (user.balance >= 10000) rank = 'Có tiền';
-    
-    const embed = new EmbedBuilder()
-      .setTitle('💰 Số Dư')
-      .setColor('#1a237e')
-      .addFields(
-        { name: '💵 Số dư', value: `${user.balance.toLocaleString()} V`, inline: true },
-        { name: '🏆 Hạng', value: rank, inline: true },
-        { name: '🎯 Level', value: `${user.level}`, inline: true }
-      )
-      .setTimestamp();
-    
-    if (userGuild) {
-      embed.addFields({ 
-        name: '🏰 Guild', 
-        value: `${userGuild.name} (Hạng ${userGuild.guildRank.level})`, 
-        inline: false 
-      });
-    }
-    
-    await message.reply({ embeds: [embed] });
-  }
+  name: 'profile', description: 'Xem profile',
+  async execute(m) { await m.reply({ embeds: [actProfile(m.mentions.users.first() || m.author, m.guildId).embed] }); }
 };
 
 export const prefixes: PrefixCommand[] = [prefixWork, prefixDaily, prefixCash, prefixWeekly, prefixBet, prefixProfile, prefixInventory, prefixInv];

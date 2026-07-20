@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import type { PrefixCommand, SlashCommand } from '../types/command.js';
 import { getStore } from '../store/store.js';
 
@@ -11,11 +11,10 @@ export const slash: SlashCommand = {
     .addStringOption((o) => o.setName('name').setDescription('Tên guild').setRequired(true))
     .addStringOption((o) => o.setName('role').setDescription('ID role').setRequired(true)),
   async execute(interaction) {
-    // Role kiểm soát: chỉ role id 1409811217048141896 được phép
-    const allowRoleId = '1409811217048141896';
+    // Chỉ Quản trị viên của server được phép (không hard-code ID riêng của server nào)
     const member = await interaction.guild!.members.fetch(interaction.user.id);
-    if (!member.roles.cache.has(allowRoleId)) {
-      await interaction.reply({ content: 'Bạn không có quyền dùng lệnh này.', ephemeral: true });
+    if (!member.permissions.has(PermissionFlagsBits.Administrator)) {
+      await interaction.reply({ content: 'Chỉ Quản trị viên mới dùng được lệnh này.', ephemeral: true });
       return;
     }
     const user = interaction.options.getUser('user', true);
@@ -49,7 +48,13 @@ export const prefixGuild: PrefixCommand = {
         await message.reply('Cú pháp: v guild create <tên guild>');
         return;
       }
-      
+
+      // Chặn trùng tên -> tránh chiếm/ghi đè guild của người khác
+      if (store.guildExists(guildName)) {
+        await message.reply(`Tên guild '${guildName}' đã tồn tại. Hãy chọn tên khác.`);
+        return;
+      }
+
       // Tạo guild mới với user làm chủ
       const newGuild = store.ensureGuild(guildName);
       newGuild.ownerId = message.author.id;
@@ -134,8 +139,8 @@ export const prefixGuild: PrefixCommand = {
         return; 
       }
       const res = store.markGuildDaily(myGuild.name, message.author.id);
-      // Nếu tất cả các thành viên đã điểm danh: thưởng 300 V cho tất cả
-      if (res.completedAll) {
+      // Chỉ thưởng khi VỪA đủ toàn bộ (shouldReward = true đúng 1 lần/ngày), tránh đúc tiền khi spam.
+      if (res.shouldReward) {
         for (const uid of myGuild.members) {
           store.getUser(uid).balance += 300;
         }
@@ -266,7 +271,13 @@ export const slashGuildCreate: SlashCommand = {
       await interaction.reply({ content: 'Bạn đã thuộc một guild rồi. Chỉ có thể tạo guild mới khi rời guild hiện tại.', ephemeral: true });
       return;
     }
-    
+
+    // Chặn trùng tên -> tránh chiếm/ghi đè guild của người khác
+    if (store.guildExists(guildName)) {
+      await interaction.reply({ content: `Tên guild '${guildName}' đã tồn tại. Hãy chọn tên khác.`, ephemeral: true });
+      return;
+    }
+
     // Tạo guild mới với user làm chủ
     const newGuild = store.ensureGuild(guildName);
     newGuild.ownerId = interaction.user.id;
@@ -377,8 +388,8 @@ export const slashGuildDaily: SlashCommand = {
     }
     
     const res = store.markGuildDaily(myGuild.name, interaction.user.id);
-    // Nếu tất cả các thành viên đã điểm danh: thưởng 300 V cho tất cả
-    if (res.completedAll) {
+    // Chỉ thưởng khi VỪA đủ toàn bộ (shouldReward = true đúng 1 lần/ngày), tránh đúc tiền khi spam.
+    if (res.shouldReward) {
       for (const uid of myGuild.members) {
         store.getUser(uid).balance += 300;
       }

@@ -170,9 +170,17 @@ export const prefixHunt: PrefixCommand = {
       baseSuccessRate += 20; // +20% với lucky charm
       store.removeItemFromInventory(message.author.id, 'monsterItems', 'lucky_charm', 1);
     }
+
+    // Role Trừ Tà Sư + bonus con giáp (Ngọ/Khỉ...) vào tỷ lệ săn
+    baseSuccessRate += store.getShopRoleBuffs(message.author.id).huntSuccess;
+    baseSuccessRate += store.getZodiacBonuses(message.author.id).hunt;
     
+    // Cap tỷ lệ ở 95% (đồng bộ với bản slash) — nếu không, vũ khí bonus cao (vd dep_to_ong +99%)
+    // sẽ đẩy tỷ lệ >100% => luôn thắng => exploit in tiền vô hạn.
+    const finalSuccessRate = Math.min(95, baseSuccessRate);
+
     // Thực hiện săn quái
-    const success = Math.random() * 100 < baseSuccessRate;
+    const success = Math.random() * 100 < finalSuccessRate;
     let reward = 0;
     let lootMessage = '';
     
@@ -225,7 +233,7 @@ export const prefixHunt: PrefixCommand = {
       .setColor(success ? '#1a237e' : '#ff6f00')
       .addFields(
         { name: '🎯 Mục tiêu', value: `${monsterEmoji} ${monsterName}`, inline: true },
-        { name: '📊 Tỷ lệ thành công', value: `${Math.round(baseSuccessRate)}%`, inline: true },
+        { name: '📊 Tỷ lệ thành công', value: `${Math.round(finalSuccessRate)}%`, inline: true },
         { name: '⚔️ Vũ khí', value: user.equippedItems.weapon || 'Không có', inline: true },
         { name: '🎲 Kết quả', value: success ? '✅ Thành công!' : '❌ Thất bại!', inline: false }
       )

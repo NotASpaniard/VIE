@@ -3,6 +3,43 @@ import type { PrefixCommand, SlashCommand } from '../types/command.js';
 import { getStore } from '../store/store.js';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import * as ui from '../lib/ui.js';
+
+const CAT_META: Record<string, { title: string; emoji: string }> = {
+  eggs: { title: 'Trứng Thần', emoji: '🥚' },
+  weapons: { title: 'Binh Khí', emoji: '⚔️' },
+  dungeon_gear: { title: 'Phù Chú & Linh Đan', emoji: '🔮' },
+  roles: { title: 'Chức Nghiệp', emoji: '🎭' }
+};
+
+function loadShop() {
+  return JSON.parse(readFileSync(path.join(process.cwd(), 'data/shop_config.json'), 'utf8'));
+}
+
+// Danh mục shop dùng chung cho cả slash lẫn prefix (luôn hiển thị item_id để mua)
+function categoryEmbed(catKey: string): EmbedBuilder | null {
+  const items = loadShop()[catKey];
+  if (!items) return null;
+  const meta = CAT_META[catKey] || { title: catKey, emoji: '🛒' };
+  const body = Object.entries(items).map(([id, c]: [string, any]) => {
+    const price = c.price === 0 ? '🔒 Chỉ rớt từ ải' : `💰 ${c.price.toLocaleString('vi-VN')} V`;
+    return `${meta.emoji} **${c.name}** · \`${id}\`\n${price} · cần Lv ${c.levelRequired}\n${ui.E.dot} ${c.description}`;
+  }).join('\n\n');
+  const footer = catKey === 'eggs'
+    ? 'VIE · Giá hiển thị là giá gốc — tăng dần mỗi lần mua! Đủ 12 → v zodiac để hợp thể'
+    : 'VIE · v buy <item_id> [số lượng]';
+  return ui.brand(`${meta.emoji} Cửa Hàng ${meta.title}`, body).setFooter({ text: footer });
+}
+
+function shopHomeEmbed(): EmbedBuilder {
+  return ui.brand('🏯 Cửa Hàng VIE', 'Chọn một quầy để xem chi tiết:').addFields(
+    { name: '🥚 Trứng Thần', value: '`v shop eggs`', inline: true },
+    { name: '⚔️ Binh Khí', value: '`v shop weapons`', inline: true },
+    { name: '🔮 Phù Chú', value: '`v shop dungeon`', inline: true },
+    { name: '🎭 Chức Nghiệp', value: '`v shop roles`', inline: true },
+    { name: '💰 Giao dịch', value: '`v buy <id> [sl]` · `v sell <id> [sl]`', inline: false }
+  );
+}
 
 // v shop - Xem tất cả shop categories
 
@@ -23,57 +60,19 @@ export const slashShop: SlashCommand = {
         )),
   async execute(interaction) {
     try {
-      const category = interaction.options.getString('category');
-      const store = getStore();
-      const shopConfig = JSON.parse(readFileSync(path.join(process.cwd(), 'data/shop_config.json'), 'utf8'));
-      
-      if (category) {
-        // Show specific category
-        const items = shopConfig[category];
-        if (!items) {
-          await interaction.reply({ content: 'Loại cửa hàng không tồn tại.', ephemeral: true });
-          return;
-        }
-        
-        const embed = new EmbedBuilder()
-          .setTitle(`🛒 Cửa hàng ${category}`)
-          .setColor('#1a237e')
-          .setDescription(`Danh sách ${category} có sẵn:`);
-        
-        for (const [itemId, item] of Object.entries(items)) {
-          const price = (item as any).price;
-          const name = (item as any).name;
-          const description = (item as any).description;
-          const levelRequired = (item as any).levelRequired;
-          
-          embed.addFields({
-            name: `${name} ${price === 0 ? '🏆 KHÔNG BÁN' : `${price} V`}`,
-            value: `${description}\nLevel: ${levelRequired}`,
-            inline: true
-          });
-        }
-        
+      const choice = interaction.options.getString('category');
+      const catKey = choice === 'dungeon' ? 'dungeon_gear' : choice;
+      if (catKey) {
+        const embed = categoryEmbed(catKey);
+        if (!embed) { await interaction.reply({ embeds: [ui.err('Loại cửa hàng không tồn tại.')], ephemeral: true }); return; }
         await interaction.reply({ embeds: [embed] });
       } else {
-        // Show all categories
-        const embed = new EmbedBuilder()
-          .setTitle('🛒 Cửa hàng VIE')
-          .setColor('#1a237e')
-          .setDescription('Chọn loại cửa hàng:')
-          .addFields(
-            { name: '🥚 Trứng', value: 'Trứng thần thoại để ấp', inline: true },
-            { name: '⚔️ Vũ khí', value: 'Binh khí săn quái', inline: true },
-            { name: '🔮 Phù chú', value: 'Bùa phép đi ải', inline: true },
-            { name: '👑 Vai trò', value: 'Chức nghiệp đặc biệt', inline: true }
-          )
-          .setFooter({ text: 'Sử dụng /shop <category> để xem chi tiết' });
-        
-        await interaction.reply({ embeds: [embed] });
+        await interaction.reply({ embeds: [shopHomeEmbed()] });
       }
     } catch (error) {
       console.error('Error in slashShop:', error);
       if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ content: 'Có lỗi xảy ra khi xem cửa hàng.', ephemeral: true });
+        await interaction.reply({ embeds: [ui.err('Có lỗi xảy ra khi xem cửa hàng.')], ephemeral: true });
       }
     }
   }
@@ -121,8 +120,11 @@ export const slashBuy: SlashCommand = {
       const price = (item as any).price;
       const name = (item as any).name;
       const levelRequired = (item as any).levelRequired;
-      const totalCost = price * quantity;
-      
+      const isEgg = category === 'eggs';
+      const qty = isEgg ? 1 : quantity;
+      const unitPrice = isEgg ? store.getEggPrice(interaction.user.id, price) : price;
+      const totalCost = unitPrice * qty;
+
       if (price === 0) {
         await interaction.reply({ content: 'Item này không thể mua được.', ephemeral: true });
         return;
@@ -138,22 +140,49 @@ export const slashBuy: SlashCommand = {
         return;
       }
       
-      // Purchase item
+      // Role: gán role Discord theo tên + chống mua lại
+      if (category === 'roles') {
+        if (quantity > 1) {
+          await interaction.reply({ content: 'Chỉ có thể mua 1 role.', ephemeral: true });
+          return;
+        }
+        if (store.getItemQuantity(interaction.user.id, 'misc', `role_${itemId}`) > 0) {
+          await interaction.reply({ content: 'Bạn đã sở hữu role này rồi.', ephemeral: true });
+          return;
+        }
+        user.balance -= totalCost;
+        store.addItemToInventory(interaction.user.id, 'misc', `role_${itemId}`, 1);
+        store.save();
+        let note = '';
+        try {
+          const guildRole = interaction.guild?.roles.cache.find((r) => r.name === name);
+          if (guildRole) { const m = await interaction.guild!.members.fetch(interaction.user.id); await m.roles.add(guildRole); note = ` ✅ Đã gán <@&${guildRole.id}>.`; }
+          else note = ` ⚠️ Server chưa có role tên "${name}". Nhờ admin tạo.`;
+        } catch { note = ' ⚠️ Bot thiếu quyền gán role.'; }
+        await interaction.reply({ content: `🎭 Đã mua role **${name}**! -${totalCost.toLocaleString('vi-VN')} V${note}` });
+        return;
+      }
+
+      // Map key shop_config -> key categorizedInventory (dungeon_gear -> dungeonGear).
+      // Thêm item TRƯỚC rồi mới trừ tiền, tránh trừ tiền xong crash do sai category => mất V không nhận đồ.
+      const invCategory = category === 'dungeon_gear' ? 'dungeonGear' : category;
+      store.addItemToInventory(interaction.user.id, invCategory as any, itemId, qty);
       user.balance -= totalCost;
-      store.addItemToInventory(interaction.user.id, category as any, itemId, quantity);
+      if (isEgg) store.recordEggBuy(interaction.user.id);
       store.save();
-      
+
       const embed = new EmbedBuilder()
         .setTitle('🛒 Mua thành công!')
-        .setColor('#4fc3f7')
+        .setColor(0xe8590c)
         .addFields(
           { name: 'Item', value: `${name}`, inline: true },
-          { name: 'Số lượng', value: `${quantity}`, inline: true },
-          { name: 'Tổng chi phí', value: `${totalCost} V`, inline: true },
-          { name: 'Số dư còn lại', value: `${user.balance} V`, inline: false }
+          { name: 'Số lượng', value: `${qty}`, inline: true },
+          { name: 'Tổng chi phí', value: `${totalCost.toLocaleString('vi-VN')} V`, inline: true },
+          { name: 'Số dư còn lại', value: `${user.balance.toLocaleString('vi-VN')} V`, inline: false }
         )
         .setTimestamp();
-      
+      if (isEgg) embed.addFields({ name: '🥚 Con giáp', value: `${store.countZodiacOwned(interaction.user.id)}/12 · dùng /zodiac để hợp thể`, inline: false });
+
       await interaction.reply({ embeds: [embed] });
     } catch (error) {
       console.error('Error in slashBuy:', error);
@@ -213,15 +242,18 @@ export const slashSell: SlashCommand = {
         return;
       }
       
+      // Map key shop_config -> key categorizedInventory (dungeon_gear -> dungeonGear), tránh crash.
+      const invCategory = category === 'dungeon_gear' ? 'dungeonGear' : category;
+
       // Check if user has enough items
-      const currentQuantity = store.getItemQuantity(interaction.user.id, category as any, itemId);
+      const currentQuantity = store.getItemQuantity(interaction.user.id, invCategory as any, itemId);
       if (currentQuantity < quantity) {
         await interaction.reply({ content: `Không đủ item. Hiện có ${currentQuantity}, cần ${quantity}.`, ephemeral: true });
         return;
       }
-      
+
       // Sell item
-      store.removeItemFromInventory(interaction.user.id, category as any, itemId, quantity);
+      store.removeItemFromInventory(interaction.user.id, invCategory as any, itemId, quantity);
       user.balance += totalEarned;
       store.save();
       
@@ -261,101 +293,17 @@ export const prefixShop: PrefixCommand = {
     } else if (subcommand === 'roles') {
       await showRolesShop(message);
     } else {
-      // Default: show all shops
-      const embed = new EmbedBuilder()
-        .setTitle('🏯 Cửa Hàng VIE')
-        .setColor('#1a237e')
-        .setDescription('Chọn loại cửa hàng bạn muốn xem:')
-        .addFields(
-          { name: '🥚 Trứng Thần', value: '`v shop eggs` - Mua trứng thần thú', inline: false },
-          { name: '⚔️ Binh Khí', value: '`v shop weapons` - Mua vũ khí săn quái', inline: false },
-          { name: '🔮 Phù Chú', value: '`v shop dungeon` - Mua phù chú và linh đan', inline: false },
-          { name: '🎭 Chức Nghiệp', value: '`v shop roles` - Mua role đặc biệt', inline: false },
-          { name: '💰 Mua/Bán', value: '`v buy <item_id> [số lượng]` - Mua item\n`v sell <item_id> [số lượng]` - Bán item', inline: false }
-        )
-        .setTimestamp();
-      
-      await message.reply({ embeds: [embed] });
+      await message.reply({ embeds: [shopHomeEmbed()] });
     }
   }
 };
 
-// Show eggs shop
-async function showEggsShop(message: any) {
-  const shopConfig = JSON.parse(readFileSync(path.join(process.cwd(), 'data/shop_config.json'), 'utf8'));
-  const eggs = shopConfig.eggs;
-  
-  const items = Object.entries(eggs).map(([id, config]: [string, any]) => 
-    `**${config.name}** (${id})\n💰 ${config.price} V | Level ${config.levelRequired}\n${config.description}`
-  ).join('\n\n');
-  
-  const embed = new EmbedBuilder()
-    .setTitle('🥚 Cửa Hàng Trứng Thần')
-    .setColor('#1a237e')
-    .setDescription(items)
-    .setFooter({ text: 'Dùng: v buy <item_id> [số lượng] để mua' })
-    .setTimestamp();
-  
-  await message.reply({ embeds: [embed] });
-}
-
-// Show weapons shop
-async function showWeaponsShop(message: any) {
-  const shopConfig = JSON.parse(readFileSync(path.join(process.cwd(), 'data/shop_config.json'), 'utf8'));
-  const weapons = shopConfig.weapons;
-  
-  const items = Object.entries(weapons).map(([id, config]: [string, any]) => {
-    const priceText = config.price === 0 ? '🏆 KHÔNG BÁN' : `💰 ${config.price} V`;
-    return `**${config.name}** (${id})\n${priceText} | Level ${config.levelRequired}\n${config.description}`;
-  }).join('\n\n');
-  
-  const embed = new EmbedBuilder()
-    .setTitle('⚔️ Cửa Hàng Binh Khí')
-    .setColor('#1a237e')
-    .setDescription(items)
-    .setFooter({ text: 'Dùng: v buy <item_id> [số lượng] để mua' })
-    .setTimestamp();
-  
-  await message.reply({ embeds: [embed] });
-}
-
-// Show dungeon shop
-async function showDungeonShop(message: any) {
-  const shopConfig = JSON.parse(readFileSync(path.join(process.cwd(), 'data/shop_config.json'), 'utf8'));
-  const dungeonGear = shopConfig.dungeon_gear;
-  
-  const items = Object.entries(dungeonGear).map(([id, config]: [string, any]) => 
-    `**${config.name}** (${id})\n💰 ${config.price} V | Level ${config.levelRequired}\n${config.description}`
-  ).join('\n\n');
-  
-  const embed = new EmbedBuilder()
-    .setTitle('🔮 Cửa Hàng Phù Chú')
-    .setColor('#1a237e')
-    .setDescription(items)
-    .setFooter({ text: 'Dùng: v buy <item_id> [số lượng] để mua' })
-    .setTimestamp();
-  
-  await message.reply({ embeds: [embed] });
-}
+async function showEggsShop(message: any) { await message.reply({ embeds: [categoryEmbed('eggs')!] }); }
+async function showWeaponsShop(message: any) { await message.reply({ embeds: [categoryEmbed('weapons')!] }); }
+async function showDungeonShop(message: any) { await message.reply({ embeds: [categoryEmbed('dungeon_gear')!] }); }
 
 // Show roles shop
-async function showRolesShop(message: any) {
-  const shopConfig = JSON.parse(readFileSync(path.join(process.cwd(), 'data/shop_config.json'), 'utf8'));
-  const roles = shopConfig.roles;
-  
-  const items = Object.entries(roles).map(([id, config]: [string, any]) => 
-    `**${config.name}** (${id})\n💰 ${config.price} V | Level ${config.levelRequired}\n${config.description}`
-  ).join('\n\n');
-  
-  const embed = new EmbedBuilder()
-    .setTitle('🎭 Cửa Hàng Chức Nghiệp')
-    .setColor('#1a237e')
-    .setDescription(items)
-    .setFooter({ text: 'Dùng: v buy <item_id> để mua role' })
-    .setTimestamp();
-  
-  await message.reply({ embeds: [embed] });
-}
+async function showRolesShop(message: any) { await message.reply({ embeds: [categoryEmbed('roles')!] }); }
 
 // v buy <item_id> [số lượng] - Mua item
 export const prefixBuy: PrefixCommand = {
@@ -363,8 +311,8 @@ export const prefixBuy: PrefixCommand = {
   description: 'Mua item từ cửa hàng',
   async execute(message, args) {
     const itemId = args[0];
-    const quantity = Number(args[1]) || 1;
-    
+    const quantity = Math.floor(Number(args[1])) || 1;
+
     if (!itemId || !Number.isFinite(quantity) || quantity <= 0) {
       await message.reply('Cú pháp: v buy <item_id> [số lượng]');
       return;
@@ -400,45 +348,64 @@ export const prefixBuy: PrefixCommand = {
       return;
     }
     
-    // Kiểm tra đủ tiền
-    const totalCost = itemConfig.price * quantity;
+    // Trứng con giáp: mỗi lần mua 1, giá lũy tiến theo số lần đã mua
+    const isEgg = category === 'eggs';
+    const qty = isEgg ? 1 : quantity;
+    const unitPrice = isEgg ? store.getEggPrice(message.author.id, itemConfig.price) : itemConfig.price;
+    const totalCost = unitPrice * qty;
     if (user.balance < totalCost) {
-      await message.reply(`Không đủ tiền. Cần ${totalCost} V, bạn có ${user.balance} V.`);
+      await message.reply(`Không đủ tiền. Cần ${totalCost.toLocaleString('vi-VN')} V, bạn có ${user.balance.toLocaleString('vi-VN')} V.`);
       return;
     }
-    
+
     // Xử lý mua role đặc biệt
     if (category === 'roles') {
       if (quantity > 1) {
         await message.reply('Chỉ có thể mua 1 role.');
         return;
       }
-      
-      // Gán role cho user (cần implement role assignment)
+      if (store.getItemQuantity(message.author.id, 'misc', `role_${itemId}`) > 0) {
+        await message.reply('Bạn đã sở hữu role này rồi.');
+        return;
+      }
+
       user.balance -= totalCost;
+      store.addItemToInventory(message.author.id, 'misc', `role_${itemId}`, 1);
       store.save();
-      
+
+      // Thử gán role Discord theo tên
+      let note = '';
+      try {
+        const guildRole = message.guild?.roles.cache.find((r) => r.name === itemConfig.name);
+        if (guildRole) { await message.member?.roles.add(guildRole); note = `\n✅ Đã gán role <@&${guildRole.id}>.`; }
+        else note = `\n⚠️ Server chưa có role tên **${itemConfig.name}**. Nhờ admin tạo role này.`;
+      } catch { note = `\n⚠️ Bot thiếu quyền gán role (cần Manage Roles + role bot cao hơn role này).`; }
+
       const embed = new EmbedBuilder()
         .setTitle('🎭 Mua Role')
-        .setColor('#1a237e')
-        .setDescription(`Đã mua role **${itemConfig.name}** thành công!\n💰 -${totalCost} V`)
+        .setColor('#e8590c')
+        .setDescription(`Đã mua role **${itemConfig.name}**!\n💰 -${totalCost.toLocaleString('vi-VN')} V${note}`)
         .setTimestamp();
-      
       await message.reply({ embeds: [embed] });
       return;
     }
     
     // Mua item thường
     user.balance -= totalCost;
-    store.addItemToInventory(message.author.id, category as any, itemId, quantity);
+    store.addItemToInventory(message.author.id, category as any, itemId, qty);
+    if (isEgg) store.recordEggBuy(message.author.id);
     store.save();
-    
+
+    const owned = isEgg ? store.countZodiacOwned(message.author.id) : 0;
     const embed = new EmbedBuilder()
       .setTitle('🛒 Mua Hàng')
-      .setColor('#1a237e')
-      .setDescription(`Đã mua **${itemConfig.name}** x${quantity} thành công!\n💰 -${totalCost} V`)
+      .setColor('#e8590c')
+      .setDescription(
+        `Đã mua **${itemConfig.name}** x${qty}!\n💰 -${totalCost.toLocaleString('vi-VN')} V` +
+        (isEgg ? `\n🥚 Bộ sưu tập con giáp: **${owned}/12** · giá trứng kế tiếp sẽ cao hơn (\`v zodiac\` để hợp thể)` : '')
+      )
       .setTimestamp();
-    
+
     await message.reply({ embeds: [embed] });
   }
 };
@@ -449,8 +416,8 @@ export const prefixSell: PrefixCommand = {
   description: 'Bán item (70% giá mua)',
   async execute(message, args) {
     const itemId = args[0];
-    const quantity = Number(args[1]) || 1;
-    
+    const quantity = Math.floor(Number(args[1])) || 1;
+
     if (!itemId || !Number.isFinite(quantity) || quantity <= 0) {
       await message.reply('Cú pháp: v sell <item_id> [số lượng]');
       return;
@@ -479,7 +446,13 @@ export const prefixSell: PrefixCommand = {
       await message.reply('Item không thể bán.');
       return;
     }
-    
+
+    // Chặn bán item giá 0 (Dép Tổ Ong, trứng dungeon-only) -> nếu không sẽ bị xoá vĩnh viễn nhận 0 V.
+    if (itemConfig.price === 0) {
+      await message.reply('Item này không thể bán.');
+      return;
+    }
+
     // Kiểm tra có đủ item không
     const currentQuantity = store.getItemQuantity(message.author.id, category as any, itemId);
     if (currentQuantity < quantity) {

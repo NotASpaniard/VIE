@@ -56,3 +56,8 @@ Thumbs.db
 *.plan.md
 conversation-*.md
 *.conversation
+
+# Dữ liệu người chơi (chứa ID Discord + số dư) — KHÔNG commit
+data/db.json
+data/db.json.tmp
+data/db.json.corrupt.*

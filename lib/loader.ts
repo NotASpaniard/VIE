@@ -3,18 +3,24 @@ import { readdirSync } from 'node:fs';
 import path from 'node:path';
 
 export async function loadCommands(client: Client): Promise<void> {
-  const commandsDir = path.join(process.cwd(), 'dist', 'modules');
-  
+  // Khi chạy source qua tsx, module này là .ts -> load thẳng modules/*.ts (dev, hot-reload).
+  // Khi đã build và chạy bằng node, module này là .js -> load dist/modules/*.js.
+  const isSource = import.meta.url.endsWith('.ts');
+  const commandsDir = isSource
+    ? path.join(process.cwd(), 'modules')
+    : path.join(process.cwd(), 'dist', 'modules');
+  const moduleExt = isSource ? '.ts' : '.js';
+
   // Create completely new Maps to avoid any contamination
   const slashCommands = new Map();
   const prefixCommands = new Map();
-  
+
   // Clear any existing commands first
   (client as any).commands?.clear();
   (client as any).prefixCommands?.clear();
-  
+
   for (const file of readdirSync(commandsDir)) {
-    if (!file.endsWith('.js')) continue;
+    if (!file.endsWith(moduleExt)) continue;
     
     const filePath = 'file://' + path.join(commandsDir, file).replace(/\\/g, '/');
     const imported = await import(filePath);

@@ -5,6 +5,7 @@ const schema = z.object({
   DISCORD_TOKEN: z.string().min(1),
   DISCORD_CLIENT_ID: z.string().min(1),
   DISCORD_GUILD_ID: z.string().optional(),
+  ADMIN_IDS: z.string().optional(), // danh sách User ID admin, ngăn cách dấu phẩy
   PREFIX: z.string().default('v')
 });
 

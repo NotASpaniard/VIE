@@ -2,113 +2,35 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashComman
 import type { PrefixCommand, SlashCommand } from '../types/command.js';
 import { getStore } from '../store/store.js';
 import { getEnv } from '../lib/env.js';
+import * as ui from '../lib/ui.js';
+
+function helpEmbed(): EmbedBuilder {
+  const p = getEnv().PREFIX;
+  return ui.brand('🏯 Bảng Lệnh VIE', `Prefix: \`${p}\` · hoặc dùng lệnh gạch chéo \`/\`\nMMORPG Thần Thoại Việt Nam — kiếm V, săn quái, ấp trứng, đấu ải.`)
+    .addFields(
+      { name: '💰 Kinh Tế', value: '`work` `daily` `weekly` · `cash` `profile` · `give @u <V>` · `top` · `bet <V>` · `inv`', inline: false },
+      { name: '⚔️ Săn Quái', value: '`hunt` · `hunt equip <vũ_khí>` · `hunt inv` · `hunt use <bùa>`', inline: false },
+      { name: '🥚 Ấp Trứng', value: '`hatch` · `hatch place <trứng>` · `hatch collect` · `hatch upgrade`', inline: false },
+      { name: '🏯 Đấu Ải (turn-based)', value: '`dungeon` · `dungeon enter <nhan|thien|ma>` · `dungeon stats`', inline: false },
+      { name: '🛒 Cửa Hàng', value: '`shop` · `shop <eggs|weapons|dungeon|roles>` · `buy <id> [sl]` · `sell <id> [sl]`', inline: false },
+      { name: '🎮 Giải Trí', value: '`blackjack <V>` (Hit/Stand) · `baucua <cửa> <V>` · `xocdia <chẵn|lẻ> <V>`', inline: false },
+      { name: '🏰 Guild', value: '`guild create <tên>` · `guild add/remove @u` · `guild daily` · `guild info` · `guild donate <V>`', inline: false },
+      { name: '🎉 Khác', value: '`ga <giờ> <win> <nội dung>` · `quest` · `info`', inline: false }
+    )
+    .setFooter({ text: 'VIE · Thần Thoại Việt Nam · gõ /help hoặc v help' });
+}
 
 // ===================== BASIC CMDS =====================
-// Slash: /help
-export const slash: SlashCommand = {
-  data: new SlashCommandBuilder()
-    .setName('help')
-    .setDescription('Hướng dẫn sử dụng bot VIE'),
-  async execute(interaction) {
-    const embed = new EmbedBuilder()
-      .setTitle('🏯 Hướng dẫn sử dụng bot VIE')
-      .setDescription('Danh sách các lệnh và chức năng của bot')
-      .setColor('#1a237e')
-      .addFields(
-        { 
-          name: '⚙️ Prefix Commands', 
-          value: `Sử dụng prefix: \`${getEnv().PREFIX}\``,
-          inline: false
-        },
-        { 
-          name: '💰 Lệnh Kinh Tế (Economy)', 
-          value: [
-            '• `v work` - Làm việc kiếm V (30 phút)',
-            '• `v daily` - Nhận thưởng hàng ngày',
-            '• `v weekly` - Quà hàng tuần (7 ngày)',
-            '• `v bet <số tiền>` - Đặt cược may rủi 50/50',
-            '• `v cash` - Kiểm tra số dư tài khoản',
-            '• `v profile [@user]` - Xem profile đầy đủ',
-            '• `v give <@user> <số tiền>` - Chuyển tiền cho người khác',
-            '• `v bxh` - Xem bảng xếp hạng giàu có',
-            '• `v quest` - Xem và làm nhiệm vụ hàng ngày',
-            '• `v inventory` / `v inv` - Xem túi đồ phân loại'
-          ].join('\n'),
-          inline: false
-        },
-        { 
-          name: '🏰 Lệnh Guild', 
-          value: [
-            '• `/guildowner <@user> <tên guild> <role>` - Quản lý chủ guild',
-            '• `v guild create <tên>` - Tạo guild mới',
-            '• `v guild add/remove/list` - Quản lý thành viên guild',
-            '• `v guild daily` - Nhận thưởng guild hàng ngày',
-            '• `v guild bxh` - Bảng xếp hạng guild',
-            '• `v guild inv` - Xem kho guild',
-            '• `v guild quest` - Nhiệm vụ guild',
-            '• `v guild info` - Thông tin guild rank & buff',
-            '• `v guild donate <số tiền>` - Đóng góp nâng cấp guild rank'
-          ].join('\n'),
-          inline: false
-        },
-        { 
-          name: '🥚 Lệnh Ấp Trứng (Hatch)', 
-          value: [
-            '• `v hatch` - Xem trạng thái trại ấp trứng',
-            '• `v hatch place <tên_trứng>` - Đặt ấp trứng',
-            '• `v hatch collect` - Thu thập trứng đã nở',
-            '• `v hatch upgrade` - Nâng cấp trại'
-          ].join('\n'),
-          inline: false
-        },
-        { 
-          name: '⚔️ Lệnh Săn Quái (Hunt)', 
-          value: [
-            '• `v hunt` - Săn quái thần thoại (2 phút)',
-            '• `v hunt equip <vũ_khí>` - Trang bị vũ khí',
-            '• `v hunt inventory` - Xem đồ săn quái',
-            '• `v hunt use <bùa_phép>` - Dùng bùa phép'
-          ].join('\n'),
-          inline: false
-        },
-        { 
-          name: '🏯 Lệnh Đi Ải (Dungeon)', 
-          value: [
-            '• `v dungeon` - Xem trạng thái các ải',
-            '• `v dungeon enter <nhan|thien|ma>` - Vào ải',
-            '• `v dungeon stats` - Thống kê cá nhân',
-            '• `v dungeon leaderboard` - BXH chinh phục ải'
-          ].join('\n'),
-          inline: false
-        },
-        { 
-          name: '🛒 Lệnh Cửa Hàng (Shop)', 
-          value: [
-            '• `v shop` - Xem tất cả cửa hàng',
-            '• `v shop eggs` - Cửa hàng trứng thần',
-            '• `v shop weapons` - Cửa hàng binh khí',
-            '• `v shop dungeon` - Cửa hàng phù chú',
-            '• `v shop roles` - Cửa hàng chức nghiệp',
-            '• `v buy <item_id> [số lượng]` - Mua item',
-            '• `v sell <item_id> [số lượng]` - Bán item'
-          ].join('\n'),
-          inline: false
-        },
-        { 
-          name: '🎮 Giải trí (Entertainment)', 
-          value: [
-            '• `v blackjack <số tiền>` - Chơi Blackjack (x2, Blackjack x2.5)',
-            '• `v baucua <bầu|cua|tôm|cá|gà|nai> <số tiền>` - Chơi Bầu Cua',
-            '• `v xocdia <chẵn|lẻ> <số tiền>` - Chơi Xóc Đĩa (x1.95)'
-          ].join('\n'),
-          inline: false
-        }
-      )
-      .setFooter({ text: '🏯 Bot VIE - Sức mạnh biển cả!' })
-      .setTimestamp();
-    
-    await interaction.reply({ embeds: [embed], ephemeral: true });
-  }
+// Slash: /help  (đặt tên slashHelp vì loader bỏ qua đúng key "slash")
+export const slashHelp: SlashCommand = {
+  data: new SlashCommandBuilder().setName('help').setDescription('Hướng dẫn sử dụng bot VIE'),
+  async execute(interaction) { await interaction.reply({ embeds: [helpEmbed()], ephemeral: true }); }
+};
+
+export const prefixHelp: PrefixCommand = {
+  name: 'help',
+  description: 'Bảng lệnh VIE',
+  async execute(message) { await message.reply({ embeds: [helpEmbed()] }); }
 };
 
 const store = getStore();
@@ -293,6 +215,6 @@ export const slashQuest: SlashCommand = {
 };
 
 // Đăng ký thêm các lệnh prefix phụ trong file
-export const prefixes: PrefixCommand[] = [prefixInfo, prefixGive, prefixBxh, prefixQuest];
+export const prefixes: PrefixCommand[] = [prefixHelp, prefixInfo, prefixGive, prefixBxh, prefixQuest];
 
 
