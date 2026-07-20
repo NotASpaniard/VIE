@@ -1,6 +1,6 @@
 # 📖 Hướng Dẫn Sử Dụng Bot VIE
 
-Viết cho người **chưa từng động vào lập trình**. Cứ làm đúng từng bước, không cần hiểu bên trong chạy thế nào.
+Viết cho người low/non tech. Cứ làm đúng từng bước, không cần hiểu bên trong chạy thế nào.
 
 Tài liệu chia 2 phần:
 - **Phần 1 — Dành cho người chơi**: cách chơi trong Discord (không cần cài gì cả)
